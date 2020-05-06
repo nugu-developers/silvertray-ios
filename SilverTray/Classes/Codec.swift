@@ -22,6 +22,7 @@ import Foundation
 
 public enum Codec {
     case opus
+    case vorbis
     case mp3
     case aac
 }

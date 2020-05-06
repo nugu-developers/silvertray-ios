@@ -7,9 +7,9 @@ Pod::Spec.new do |s|
 play encoded data using AVAudioEngine
                        DESC
 
-  s.homepage         = 'https://github.com/childc/SilverTray'
-  s.author           = { 'childc' => 'skimdcc@gmail.com' }
-  s.source           = { :git => 'https://github.com/childc/SilverTray.git', :tag => s.version.to_s }
+  s.homepage = 'https://github.com/nugu-developers/silvertray-ios'
+  s.author = { 'childc' => 'skimdcc@gmail.com' }
+  s.source = { :git => 'https://github.com/nugu-developers/silvertray-ios.git', :tag => s.version.to_s }
   s.documentation_url = 'https://developers.nugu.co.kr'
 
   s.ios.deployment_target = '10.0'
@@ -29,6 +29,8 @@ play encoded data using AVAudioEngine
   s.preserve_paths = 'SilverTray/Libraries/**', 'SilverTray/SilverTray.modulemap'
   s.module_map = 'SilverTray/SilverTray.modulemap'
   s.libraries = 'c++'
+
+  s.dependency 'NattyLog', "1.1.1"
   
   s.xcconfig = {
     'OTHER_LDFLAGS' => '-Xlinker -w',
