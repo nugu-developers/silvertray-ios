@@ -432,7 +432,8 @@ private extension DataStreamPlayer {
                 guard let nextBuffer = self.audioBuffers[safe: self.curBufferIndex] else {
                     log.debug("waiting for next audio data.")
                     
-                    NotificationCenter.default.addObserver(forName: .audioBufferChange, object: self, queue: nil) { (notification) in
+                    NotificationCenter.default.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
+                        guard let self = self else { return }
                         guard let nextBuffer = self.audioBuffers[safe: self.curBufferIndex] else { return }
                         
                         log.debug("Try to restart scheduler.")
