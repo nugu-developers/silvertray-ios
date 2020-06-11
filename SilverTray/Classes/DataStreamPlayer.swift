@@ -279,6 +279,13 @@ extension DataStreamPlayer {
             lastBuffer = audioBuffers.last
             tempAudioArray.removeAll()
             
+            guard 0 < audioBuffers.count else {
+                log.info("No data appended.")
+                reset()
+                state = .finish
+                return
+            }
+            
             // last data received but recursive scheduler is not started yet.
             if curBufferIndex == 0 {
                 curBufferIndex += (audioBuffers.count - 1)
