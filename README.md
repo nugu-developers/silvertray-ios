@@ -2,7 +2,7 @@
 
 ![Platform](https://img.shields.io/cocoapods/p/SilverTray)
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
-[![CocoaPods compatible](https://img.shields.io/cocoapods/v/silvertray)](https://github.com/nugu-developers/silvertray-iOS)
+[![CocoaPods compatible](https://img.shields.io/cocoapods/v/SilverTray)](https://github.com/nugu-developers/silvertray-iOS)
 [![Swift Package Manager compatible](https://img.shields.io/badge/Swift%20Package%20Manager-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 ![License](https://img.shields.io/github/license/nugu-developers/silvertray-ios)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/37a7a2e77cf542eb9a6dad0546eb7a15)](https://www.codacy.com/manual/nugu-dev-sdk/silvertray-ios?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=nugu-developers/silvertray-ios&amp;utm_campaign=Badge_Grade)
