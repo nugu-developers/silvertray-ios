@@ -200,14 +200,14 @@ public class DataStreamPlayer {
         
         if let objcException = (ObjcExceptionCatcher.objcTry {
             log.debug("try to start player")
-            self.player.play()
-            self.isPaused = false
-            self.state = .start
+            player.play()
+            isPaused = false
+            state = .start
             log.debug("player started")
             
             return nil
         }) {
-            self.state = .error(objcException)
+            state = .error(objcException)
             return
         }
 
@@ -375,12 +375,11 @@ extension DataStreamPlayer {
 // MARK: private functions
 private extension DataStreamPlayer {
     func engineInit() throws {
-        if let objcException = (ObjcExceptionCatcher.objcTry { [weak self] in
-            guard let self = self else { return nil }
+        if let objcException = (ObjcExceptionCatcher.objcTry {
             guard self.engine.isRunning == false else { return nil }
             
             do {
-                try self.engine.start()
+                try engine.start()
                 log.debug("engine started")
             } catch {
                 return error
@@ -388,7 +387,7 @@ private extension DataStreamPlayer {
             
             return nil
         }) {
-            self.state = .error(objcException)
+            state = .error(objcException)
             throw objcException
         }
     }
