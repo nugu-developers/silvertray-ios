@@ -39,6 +39,12 @@ public class OpusDecoder: AudioDecodable {
         decoder = opus_decoder_create(Int32(sampleRate), Int32(channels), nil)
     }
     
+    deinit {
+        if let decoder = decoder {
+            opus_decoder_destroy(decoder)
+        }
+    }
+    
     /**
      Decode OPUS data to PCM data.
      - AVAudioPlayerNode can play 32bit audio only. so we ought to convert 16bit opus data to 32bit data.
