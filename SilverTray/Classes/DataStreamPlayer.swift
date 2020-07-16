@@ -212,7 +212,9 @@ public class DataStreamPlayer {
         }
 
         // if audio session is changed and influence AVAudioEngine, we should handle this.
+        NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(audioSessionInterruption), name: AVAudioSession.interruptionNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(engineConfigurationChange), name: .AVAudioEngineConfigurationChange, object: nil)
     }
     
@@ -461,7 +463,7 @@ private extension DataStreamPlayer {
      - ex) AVAudioSession is changed when the audio engine is stopped. but this notification is not removed yet.
      */
     func reset() {
-//        NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
         NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
         
@@ -497,7 +499,14 @@ private extension DataStreamPlayer {
 @objc private extension DataStreamPlayer {
     func engineConfigurationChange(notification: Notification) {
         if player.isPlaying {
-            log.debug("player will be paused by changed engine configuration")
+            log.debug("player will be paused by changed engine configuration: \(notification)")
+            pause()
+        }
+    }
+    
+    func audioSessionInterruption(notification: Notification) {
+        if player.isPlaying {
+            log.debug("player will be paused audioSessionInterruption: \(notification)")
             pause()
         }
     }
