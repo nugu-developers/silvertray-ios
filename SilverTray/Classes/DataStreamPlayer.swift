@@ -131,20 +131,28 @@ public class DataStreamPlayer {
     public init(decoder: AudioDecodable, audioFormat: AVAudioFormat) throws {
         self.audioFormat = audioFormat
         self.decoder = decoder
-
-        // Attach nodes
-        engine.attach(player)
         
-        #if !os(watchOS)
-        engine.attach(speedController)
-        engine.attach(pitchController)
-        #endif
-        
-        // For the sound effects
-        connectAudioChain()
-
-        engine.prepare()
-        try engineInit()
+        if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
+            // Attach nodes
+            engine.attach(player)
+            
+            #if !os(watchOS)
+            engine.attach(speedController)
+            engine.attach(pitchController)
+            #endif
+            
+            do {
+                try initEngine()
+            } catch {
+                log.error("init engine error: \(error)")
+                return error
+            }
+            
+            return nil
+        }) {
+            log.error("init error: \(error)")
+            throw error
+        }
     }
     
     /**
@@ -164,19 +172,40 @@ public class DataStreamPlayer {
     }
     
     private func connectAudioChain() {
-        #if os(watchOS)
-        engine.connect(player, to: engine.mainMixerNode, format: audioFormat)
-        #else
-        // To control speed, Put speedController into the chain
-        // Pitch controller has rate too. But if you adjust it without pitch value, you will get unexpected audio rate.
-        engine.connect(player, to: speedController, format: audioFormat)
-        
-        // To control pitch, Put pitchController into the chain
-        engine.connect(speedController, to: pitchController, format: audioFormat)
-        
-        // To control volume, Last of chain must me mixer node.
-        engine.connect(pitchController, to: engine.mainMixerNode, format: audioFormat)
-        #endif
+        if let error = (ObjcExceptionCatcher.objcTry { () -> Error? in
+            #if os(watchOS)
+            engine.connect(player, to: engine.mainMixerNode, format: audioFormat)
+            #else
+            // To control speed, Put speedController into the chain
+            // Pitch controller has rate too. But if you adjust it without pitch value, you will get unexpected audio rate.
+            engine.connect(player, to: speedController, format: audioFormat)
+            
+            // To control pitch, Put pitchController into the chain
+            engine.connect(speedController, to: pitchController, format: audioFormat)
+            
+            // To control volume, Last of chain must me mixer node.
+            engine.connect(pitchController, to: engine.mainMixerNode, format: audioFormat)
+            #endif
+            
+            return nil
+        }) {
+            log.error("connection failed: \(error)")
+        }
+    }
+    
+    private func disconnectAudioChain() {
+        if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
+            #if !os(watchOS)
+            engine.disconnectNodeOutput(pitchController)
+            engine.disconnectNodeOutput(speedController)
+            #endif
+            
+            engine.disconnectNodeOutput(player)
+            
+            return nil
+        }) {
+            log.error("disconnection failed: \(error)")
+        }
     }
     
     public var isPlaying: Bool {
@@ -191,10 +220,10 @@ public class DataStreamPlayer {
         log.debug("try to play data stream")
         
         do {
-            try self.engineInit()
+            try initEngine()
         } catch {
             log.debug("engine init failed: \(error)")
-            self.state = .error(error)
+            state = .error(error)
             return
         }
         
@@ -212,10 +241,6 @@ public class DataStreamPlayer {
         }
 
         // if audio session is changed and influence AVAudioEngine, we should handle this.
-        #if os(iOS)
-        NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(audioSessionInterruption), name: AVAudioSession.interruptionNotification, object: nil)
-        #endif
         NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(engineConfigurationChange), name: .AVAudioEngineConfigurationChange, object: nil)
     }
@@ -378,9 +403,13 @@ extension DataStreamPlayer {
 
 // MARK: private functions
 private extension DataStreamPlayer {
-    func engineInit() throws {
+    func initEngine() throws {
+        guard self.engine.isRunning == false else { return }
+        
         if let objcException = (ObjcExceptionCatcher.objcTry {
-            guard self.engine.isRunning == false else { return nil }
+            // For the sound effects
+            connectAudioChain()
+            engine.prepare()
             
             do {
                 try engine.start()
@@ -391,7 +420,6 @@ private extension DataStreamPlayer {
             
             return nil
         }) {
-            state = .error(objcException)
             throw objcException
         }
     }
@@ -416,7 +444,7 @@ private extension DataStreamPlayer {
     
     /// schedule buffer and check last data was consumed on it's closure.
     func scheduleBuffer(audioBuffer: AVAudioPCMBuffer) {
-        player.scheduleBuffer(audioBuffer) { [weak self] in
+        let bufferHandler: AVAudioNodeCompletionHandler = { [weak self] in
             self?.audioQueue.async { [weak self] in
                 guard let self = self else { return }
                 
@@ -457,17 +485,27 @@ private extension DataStreamPlayer {
                 self.scheduleBuffer(audioBuffer: nextBuffer)
             }
         }
+        
+        if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
+            player.scheduleBuffer(audioBuffer, completionHandler: bufferHandler)
+            return nil
+        }) {
+            log.error("data schedule error: \(error)\n" +
+                "\t\trequested format: \(String(describing: audioBuffer.format))\n" +
+                "\t\tplayer format: \(String(describing: player.outputFormat(forBus: 0)))\n" +
+                "\t\tengine format: \(engine.inputNode.outputFormat(forBus: 0))")
+            log.error("\n\t\t\(AVAudioSession.sharedInstance().category)\n" +
+                "\t\t\(AVAudioSession.sharedInstance().categoryOptions)\n" +
+                "\t\taudio session sampleRate: \(AVAudioSession.sharedInstance().sampleRate)")
+        }
+
     }
     
     /**
      Notification must removed before engine stopped.
      Or you may face to exception from inside of AVAudioEngine.
-     - ex) AVAudioSession is changed when the audio engine is stopped. but this notification is not removed yet.
      */
     func reset() {
-        #if os(iOS)
-        NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
-        #endif
         NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
         NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
         
@@ -504,18 +542,11 @@ private extension DataStreamPlayer {
     func engineConfigurationChange(notification: Notification) {
         if player.isPlaying {
             log.debug("player will be paused by changed engine configuration: \(notification)")
-            pause()
+            // Reconnect audio chain
+            disconnectAudioChain()
+            connectAudioChain()
         }
     }
-    
-    #if os(iOS)
-    func audioSessionInterruption(notification: Notification) {
-        if player.isPlaying {
-            log.debug("player will be paused audioSessionInterruption: \(notification)")
-            pause()
-        }
-    }
-    #endif
 }
 
 // MARK: - Array + AVAudioPCMBuffer
