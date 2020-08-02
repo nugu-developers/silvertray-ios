@@ -272,7 +272,7 @@ public class DataStreamPlayer {
      - parameter to: seek time (millisecond)
      */
     public func seek(to offset: Int, completion: ((Result<Void, Error>) -> Void)?) {
-        os_log("try to seek", log: .player, type: .debug)
+        os_log("try to seek: %@", log: .player, type: .debug, "\(offset)")
 
         audioQueue.async { [weak self] in
             guard let self = self else { return }
@@ -449,6 +449,8 @@ private extension DataStreamPlayer {
     
     /// schedule buffer and check last data was consumed on it's closure.
     func scheduleBuffer(audioBuffer: AVAudioPCMBuffer) {
+        os_log("current index: %d", log: .audioEngine, type: .debug, curBufferIndex)
+        
         let bufferHandler: AVAudioNodeCompletionHandler = { [weak self] in
             self?.audioQueue.async { [weak self] in
                 guard let self = self else { return }
@@ -471,7 +473,6 @@ private extension DataStreamPlayer {
                     return
                 }
                 
-                self.curBufferIndex += 1
                 guard let nextBuffer = self.audioBuffers[safe: self.curBufferIndex] else {
                     guard self.lastBuffer == nil else { return }
                     os_log("waiting for next audio data.", log: .player, type: .debug)
@@ -494,11 +495,12 @@ private extension DataStreamPlayer {
         
         if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
             player.scheduleBuffer(audioBuffer, completionHandler: bufferHandler)
+            self.curBufferIndex += 1
             return nil
         }) {
             os_log("data schedule error: %@\n\t\trequested format: %@\n\t\tplayer format: %@\n\t\tengine format: %@",
                    log: .audioEngine,
-                   type: .debug, error.localizedDescription, String(describing: audioBuffer.format), "\(engine.inputNode.outputFormat(forBus: 0))")
+                   type: .error, error.localizedDescription, String(describing: audioBuffer.format), "\(engine.inputNode.outputFormat(forBus: 0))")
             
             #if !os(macOS)
             os_log("\n\t\t%@\n\t\t%@\n\t\taudio session sampleRate: %@",
