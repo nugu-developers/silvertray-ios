@@ -494,9 +494,11 @@ private extension DataStreamPlayer {
                 "\t\trequested format: \(String(describing: audioBuffer.format))\n" +
                 "\t\tplayer format: \(String(describing: player.outputFormat(forBus: 0)))\n" +
                 "\t\tengine format: \(engine.inputNode.outputFormat(forBus: 0))")
+            #if !os(macOS)
             log.error("\n\t\t\(AVAudioSession.sharedInstance().category)\n" +
                 "\t\t\(AVAudioSession.sharedInstance().categoryOptions)\n" +
                 "\t\taudio session sampleRate: \(AVAudioSession.sharedInstance().sampleRate)")
+            #endif
         }
 
     }
@@ -540,12 +542,10 @@ private extension DataStreamPlayer {
 
 @objc private extension DataStreamPlayer {
     func engineConfigurationChange(notification: Notification) {
-        if player.isPlaying {
-            log.debug("player will be paused by changed engine configuration: \(notification)")
-            // Reconnect audio chain
-            disconnectAudioChain()
-            connectAudioChain()
-        }
+        log.debug("player will be paused by changed engine configuration: \(notification)")
+        // Reconnect audio chain
+        disconnectAudioChain()
+        connectAudioChain()
     }
 }
 
