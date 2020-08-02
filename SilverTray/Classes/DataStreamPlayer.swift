@@ -59,6 +59,9 @@ public class DataStreamPlayer {
     
     private var audioQueue = DispatchQueue(label: "com.sktelecom.silver_tray.audio")
     
+    /// Flag that indicates Player was reconnected
+    private var isReconnected = false
+    
     #if DEBUG
     private var appendedData = Data()
     private var consumedData = Data()
@@ -228,6 +231,8 @@ public class DataStreamPlayer {
         }
         
         if let objcException = (ObjcExceptionCatcher.objcTry {
+            reScheduleBufferIfNeeded()
+            
             log.debug("try to start player")
             player.play()
             isPaused = false
@@ -504,6 +509,45 @@ private extension DataStreamPlayer {
     }
     
     /**
+     Re-Schedule buffers.
+     - note: AVAudioPlayerNode may flush all of scheduled buffers when It is disconnected
+     */
+    func reScheduleBufferIfNeeded() {
+        guard isReconnected else { return }
+        
+        // re-schedule buffer
+        var jitterBuffers = [AVAudioPCMBuffer?]()
+        (0..<jitterBufferSize).forEach { (jitterIndex) in
+            jitterBuffers.append(audioBuffers[safe: curBufferIndex+jitterIndex])
+        }
+        jitterBuffers = jitterBuffers.compactMap { $0 }
+        
+        guard jitterBuffers.count == jitterBufferSize else {
+            log.debug("waiting for next audio data.")
+            
+            NotificationCenter.default.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
+                guard let self = self else { return }
+                
+                log.debug("Try to reschedule")
+                self.reScheduleBufferIfNeeded()
+
+                NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
+            }
+            
+            return
+        }
+        
+        jitterBuffers.forEach { (buffer) in
+            if let buffer = buffer {
+                scheduleBuffer(audioBuffer: buffer)
+            }
+        }
+        
+        curBufferIndex += jitterBuffers.count
+        isReconnected = false
+    }
+    
+    /**
      Notification must removed before engine stopped.
      Or you may face to exception from inside of AVAudioEngine.
      */
@@ -543,9 +587,12 @@ private extension DataStreamPlayer {
 @objc private extension DataStreamPlayer {
     func engineConfigurationChange(notification: Notification) {
         log.debug("player will be paused by changed engine configuration: \(notification)")
+
         // Reconnect audio chain
         disconnectAudioChain()
         connectAudioChain()
+        
+        isReconnected = true
     }
 }
 

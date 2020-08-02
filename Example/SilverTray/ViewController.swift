@@ -50,7 +50,6 @@ class ViewController: UIViewController {
             //        player?.pitch += 300
             self?.updateSlider()
         }
-
     }
 
     @IBAction func btnClick(_ sender: UIButton) {
@@ -62,6 +61,13 @@ class ViewController: UIViewController {
         }
 
         player.play()
+        
+        // if audio session is changed and influence AVAudioEngine, we should handle this.
+        NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(audioSessionInterruption), name: AVAudioSession.interruptionNotification, object: nil)
+        
+        NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(engineConfigurationChange), name: .AVAudioEngineConfigurationChange, object: nil)
     }
     
     private func updateSlider() {
@@ -109,5 +115,28 @@ extension ViewController: DataStreamPlayerDelegate {
                 break
             }
         }
+    }
+}
+
+@objc extension ViewController {
+    func audioSessionInterruption(notification: Notification) {
+        print("audioSessionInterruption: \(notification)")
+        
+        guard let userInfo = notification.userInfo,
+            let typeInt = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+            let type = AVAudioSession.InterruptionType(rawValue: typeInt) else {
+                return
+        }
+        
+        guard type == .ended else {
+            player?.pause()
+            return
+        }
+        
+        player?.play()
+    }
+    
+    func engineConfigurationChange(notification: Notification) {
+        player?.pause()
     }
 }
