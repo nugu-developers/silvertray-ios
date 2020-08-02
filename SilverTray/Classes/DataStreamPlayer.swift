@@ -20,6 +20,7 @@
 
 import Foundation
 import AVFoundation
+import os.log
 
 import SilverTray.ObjcExceptionCatcher
 
@@ -71,7 +72,7 @@ public class DataStreamPlayer {
     public weak var delegate: DataStreamPlayerDelegate?
     public var isPaused = false {
         didSet {
-            log.debug("paused: \(isPaused)")
+            os_log("paused: %@", log: .player, type: .debug, "\(isPaused)")
         }
     }
     
@@ -79,7 +80,7 @@ public class DataStreamPlayer {
     public var state: DataStreamPlayerState = .idle {
         didSet {
             if oldValue != state {
-                log.debug("state changed: \(state)")
+                os_log("state changed: %{public}@", log: .player, type: .debug, "\(state)")
                 delegate?.dataStreamPlayerStateDidChange(state)
             }
         }
@@ -147,13 +148,12 @@ public class DataStreamPlayer {
             do {
                 try initEngine()
             } catch {
-                log.error("init engine error: \(error)")
                 return error
             }
             
             return nil
         }) {
-            log.error("init error: \(error)")
+            os_log("init engine error: %@", log: .audioEngine, type: .error, error.localizedDescription)
             throw error
         }
     }
@@ -192,7 +192,7 @@ public class DataStreamPlayer {
             
             return nil
         }) {
-            log.error("connection failed: \(error)")
+            os_log("connection failed: %@", log: .audioEngine, type: .error, error.localizedDescription)
         }
     }
     
@@ -207,7 +207,7 @@ public class DataStreamPlayer {
             
             return nil
         }) {
-            log.error("disconnection failed: \(error)")
+            os_log("disconnection failed: %@", log: .audioEngine, type: .error, error.localizedDescription)
         }
     }
     
@@ -220,12 +220,12 @@ public class DataStreamPlayer {
      - You can call this method anytime you want. (this player doesn't care whether entire audio data was appened or not)
      */
     public func play() {
-        log.debug("try to play data stream")
+        os_log("try to play data stream", log: .player, type: .debug)
         
         do {
             try initEngine()
         } catch {
-            log.debug("engine init failed: \(error)")
+            os_log("engine init failed: %@", log: .audioEngine, type: .error, error.localizedDescription)
             state = .error(error)
             return
         }
@@ -233,11 +233,11 @@ public class DataStreamPlayer {
         if let objcException = (ObjcExceptionCatcher.objcTry {
             reScheduleBufferIfNeeded()
             
-            log.debug("try to start player")
+            os_log("try to start player", log: .audioEngine, type: .debug)
             player.play()
             isPaused = false
             state = .start
-            log.debug("player started")
+            os_log("player started", log: .audioEngine, type: .debug)
             
             return nil
         }) {
@@ -251,7 +251,7 @@ public class DataStreamPlayer {
     }
     
     public func pause() {
-        log.debug("try to pause")
+        os_log("try to pause", log: .audioEngine, type: .debug)
         player.pause()
         isPaused = true
         state = .pause
@@ -262,7 +262,7 @@ public class DataStreamPlayer {
     }
     
     public func stop() {
-        log.debug("try to stop")
+        os_log("try to stop", log: .audioEngine, type: .debug)
         reset()
         state = .stop
     }
@@ -272,7 +272,7 @@ public class DataStreamPlayer {
      - parameter to: seek time (millisecond)
      */
     public func seek(to offset: Int, completion: ((Result<Void, Error>) -> Void)?) {
-        log.debug("try to seek")
+        os_log("try to seek", log: .player, type: .debug)
 
         audioQueue.async { [weak self] in
             guard let self = self else { return }
@@ -298,7 +298,7 @@ extension DataStreamPlayer {
      - Player can calculate duration of TTS.
      */
     public func lastDataAppended() throws {
-        log.debug("Last data appended. No data can be appended any longer.")
+        os_log("Last data appended. No data can be appended any longer.", log: .player, type: .debug)
 
         try audioQueue.sync {
             guard lastBuffer == nil else {
@@ -306,7 +306,7 @@ extension DataStreamPlayer {
             }
 
             if 0 < tempAudioArray.count, let lastPcmData = tempAudioArray.pcmBuffer(format: audioFormat) {
-                log.debug("Temp audio data will be scheduled. Because it is last data.")
+                os_log("Temp audio data will be scheduled. Because it is last data.", log: .player, type: .debug)
                 audioBuffers.append(lastPcmData)
             }
             
@@ -314,7 +314,7 @@ extension DataStreamPlayer {
             tempAudioArray.removeAll()
             
             guard 0 < audioBuffers.count else {
-                log.info("No data appended.")
+                os_log("No data appended.", log: .player, type: .info)
                 reset()
                 state = .finish
                 return
@@ -328,7 +328,7 @@ extension DataStreamPlayer {
                 }
             }
             
-            log.debug("duration: \(duration)")
+            os_log("duration: %@", log: .player, type: .debug, "\(duration)")
         }
     }
     
@@ -351,7 +351,7 @@ extension DataStreamPlayer {
             do {
                 pcmData = try decoder.decode(data: data)
             } catch {
-                log.debug("Decode failed")
+                os_log("Decode failed", log: .decoder, type: .error)
                 state = .error(error)
                 return
             }
@@ -418,7 +418,7 @@ private extension DataStreamPlayer {
             
             do {
                 try engine.start()
-                log.debug("engine started")
+                os_log("engine started", log: .audioEngine, type: .debug)
             } catch {
                 return error
             }
@@ -473,13 +473,14 @@ private extension DataStreamPlayer {
                 
                 self.curBufferIndex += 1
                 guard let nextBuffer = self.audioBuffers[safe: self.curBufferIndex] else {
-                    log.debug("waiting for next audio data.")
+                    guard self.lastBuffer == nil else { return }
+                    os_log("waiting for next audio data.", log: .player, type: .debug)
                     
                     NotificationCenter.default.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
                         guard let self = self else { return }
                         guard let nextBuffer = self.audioBuffers[safe: self.curBufferIndex] else { return }
                         
-                        log.debug("Try to restart scheduler.")
+                        os_log("Try to restart scheduler.", log: .player, type: .debug)
                         self.scheduleBuffer(audioBuffer: nextBuffer)
                         
                         NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
@@ -495,14 +496,14 @@ private extension DataStreamPlayer {
             player.scheduleBuffer(audioBuffer, completionHandler: bufferHandler)
             return nil
         }) {
-            log.error("data schedule error: \(error)\n" +
-                "\t\trequested format: \(String(describing: audioBuffer.format))\n" +
-                "\t\tplayer format: \(String(describing: player.outputFormat(forBus: 0)))\n" +
-                "\t\tengine format: \(engine.inputNode.outputFormat(forBus: 0))")
+            os_log("data schedule error: %@\n\t\trequested format: %@\n\t\tplayer format: %@\n\t\tengine format: %@",
+                   log: .audioEngine,
+                   type: .debug, error.localizedDescription, String(describing: audioBuffer.format), "\(engine.inputNode.outputFormat(forBus: 0))")
+            
             #if !os(macOS)
-            log.error("\n\t\t\(AVAudioSession.sharedInstance().category)\n" +
-                "\t\t\(AVAudioSession.sharedInstance().categoryOptions)\n" +
-                "\t\taudio session sampleRate: \(AVAudioSession.sharedInstance().sampleRate)")
+            os_log("\n\t\t%@\n\t\t%@\n\t\taudio session sampleRate: %@",
+                   log: .audioEngine,
+                   type: .error, "\(AVAudioSession.sharedInstance().category)", "\(AVAudioSession.sharedInstance().categoryOptions)", "\(AVAudioSession.sharedInstance().sampleRate)")
             #endif
         }
 
@@ -523,12 +524,12 @@ private extension DataStreamPlayer {
         jitterBuffers = jitterBuffers.compactMap { $0 }
         
         guard jitterBuffers.count == jitterBufferSize else {
-            log.debug("waiting for next audio data.")
+            os_log("waiting for next audio data.", log: .player, type: .debug)
             
             NotificationCenter.default.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
                 guard let self = self else { return }
                 
-                log.debug("Try to reschedule")
+                os_log("Try to reschedule", log: .player, type: .debug)
                 self.reScheduleBufferIfNeeded()
 
                 NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
@@ -571,10 +572,10 @@ private extension DataStreamPlayer {
             try self.appendedData.write(to: appendedFilename)
             try self.consumedData.write(to: consumedFilename)
             
-            log.debug("appended data to file :\(appendedFilename)")
-            log.debug("consumed data to file :\(consumedFilename)")
+            os_log("appended data to file: %@", log: .player, type: .debug, "\(appendedFilename)")
+            os_log("consumed data to file: %@", log: .player, type: .debug, "\(consumedFilename)")
         } catch {
-            log.debug(error)
+            os_log("file write failed: %@", log: .player, type: .error, error.localizedDescription)
         }
         
         appendedData.removeAll()
@@ -586,7 +587,7 @@ private extension DataStreamPlayer {
 
 @objc private extension DataStreamPlayer {
     func engineConfigurationChange(notification: Notification) {
-        log.debug("player will be paused by changed engine configuration: \(notification)")
+        os_log("player will be paused by changed engine configuration: %@", log: .audioEngine, type: .debug, "\(notification)")
 
         // Reconnect audio chain
         disconnectAudioChain()

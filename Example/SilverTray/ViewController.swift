@@ -8,6 +8,7 @@
 
 import UIKit
 import AVFoundation
+import os.log
 
 import SilverTray
 import RxSwift
@@ -86,10 +87,10 @@ class ViewController: UIViewController {
     }
     
     @IBAction func sliderValueChanged(_ sender: UISlider) {
-        print("seek to: \(sender.value), (\(sender.minimumValue)..<\(sender.maximumValue)")
+        os_log("%@", log: .app, type: .debug, "seek to: \(sender.value), (\(sender.minimumValue)..<\(sender.maximumValue)")
         
         player?.seek(to: Int(sender.value), completion: { [weak self] (result) in
-            print("result of seek: \(result)")
+            os_log("%@", log: .app, type:.debug, "result of seek: \(result)")
             
             if case .success = result {
                 self?.updateSlider()
@@ -100,7 +101,7 @@ class ViewController: UIViewController {
 
 extension ViewController: DataStreamPlayerDelegate {
     func dataStreamPlayerStateDidChange(_ state: DataStreamPlayerState) {
-        print("dataStreamPlayerStateDidChange: \(state)")
+        os_log("%@", log: .app, type: .debug, "dataStreamPlayerStateDidChange: \(state)")
         
         DispatchQueue.main.async { [weak self] in
             switch state {
@@ -120,7 +121,7 @@ extension ViewController: DataStreamPlayerDelegate {
 
 @objc extension ViewController {
     func audioSessionInterruption(notification: Notification) {
-        print("audioSessionInterruption: \(notification)")
+        os_log("%@", log: .app, type: .debug, "audioSessionInterruption: \(notification)")
         
         guard let userInfo = notification.userInfo,
             let typeInt = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -139,4 +140,9 @@ extension ViewController: DataStreamPlayerDelegate {
     func engineConfigurationChange(notification: Notification) {
         player?.pause()
     }
+}
+
+private extension OSLog {
+    private static var subsystem = Bundle.main.bundleIdentifier!
+    static let app = OSLog(subsystem: subsystem, category: "App")
 }

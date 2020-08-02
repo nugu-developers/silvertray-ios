@@ -19,6 +19,7 @@
 //
 
 import Foundation
+import os.log
 
 import SilverTray.LibOpus
 
@@ -53,14 +54,14 @@ public class OpusDecoder: AudioDecodable {
      */
     public func decode(data: Data) throws -> [Float] {
         guard let decoder = decoder else {
-            log.debug("decoder is not initialized")
+            os_log("decoder is not initialized", type: .debug)
             throw DataStreamPlayerError.decodeFailed
         }
         
         var decodedSamples = [Float](repeating: 0, count: data.count*3)
         let result = opus_decode_float(decoder, [CUnsignedChar](data), CInt(data.count), &decodedSamples, CInt(decodedSamples.count), 0)
         guard 0 < result else {
-            log.debug("decode failed, data size:\(data.count), opus error code: \(result)")
+            os_log("decode failed, data size: %@, opus error code: %@", type: .debug, data.count, "\(result)")
             throw DataStreamPlayerError.decodeFailed
         }
 

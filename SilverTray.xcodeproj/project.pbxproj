@@ -25,7 +25,6 @@
 		7365083924628EDE00EF4549 /* opus_defines.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081E24628EDD00EF4549 /* opus_defines.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		7365083A24628EDE00EF4549 /* opus_projection.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081F24628EDD00EF4549 /* opus_projection.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		7365083D24628EDE00EF4549 /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7365082624628EDD00EF4549 /* libopus.a */; };
-		73650885246D4F1200EF4549 /* NattyLog.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73650884246D4F1200EF4549 /* NattyLog.framework */; };
 		73650889246D4F3C00EF4549 /* SilverTray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73650888246D4F3C00EF4549 /* SilverTray.swift */; };
 /* End PBXBuildFile section */
 
@@ -51,7 +50,6 @@
 		7365081F24628EDD00EF4549 /* opus_projection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus_projection.h; sourceTree = "<group>"; };
 		7365082624628EDD00EF4549 /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopus.a; sourceTree = "<group>"; };
 		7365082924628EDD00EF4549 /* SilverTray.modulemap */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = SilverTray.modulemap; sourceTree = "<group>"; };
-		73650884246D4F1200EF4549 /* NattyLog.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NattyLog.framework; path = Carthage/Build/iOS/NattyLog.framework; sourceTree = "<group>"; };
 		73650888246D4F3C00EF4549 /* SilverTray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SilverTray.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -60,7 +58,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				73650885246D4F1200EF4549 /* NattyLog.framework in Frameworks */,
 				7365083D24628EDE00EF4549 /* libopus.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -73,7 +70,6 @@
 			children = (
 				736507FF24628E7B00EF4549 /* SilverTray */,
 				736507FE24628E7B00EF4549 /* Products */,
-				73650883246D4F1100EF4549 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -183,14 +179,6 @@
 				7365082624628EDD00EF4549 /* libopus.a */,
 			);
 			path = iOS;
-			sourceTree = "<group>";
-		};
-		73650883246D4F1100EF4549 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				73650884246D4F1200EF4549 /* NattyLog.framework */,
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

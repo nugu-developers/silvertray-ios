@@ -30,8 +30,6 @@ play encoded data using AVAudioEngine
   s.module_map = 'SilverTray/SilverTray.modulemap'
   s.libraries = 'c++'
 
-  s.dependency 'NattyLog', "1.1.1"
-  
   s.xcconfig = {
     'OTHER_LDFLAGS' => '-Xlinker -w',
   }

@@ -19,48 +19,11 @@
 //
 
 import Foundation
+import os.log
 
-import NattyLog
-
-// MARK: - NattyLog
-
-let log: Natty = Natty(by: nattyConfiguration)
-
-private var nattyConfiguration: NattyConfiguration {
-    #if DEBUG
-    return NattyConfiguration(
-        minLogLevel: .debug,
-        maxDescriptionLevel: .error,
-        showPersona: true,
-        prefix: "SilverTray")
-    #else
-    return NattyConfiguration(
-        minLogLevel: .warning,
-        maxDescriptionLevel: .warning,
-        showPersona: true,
-        prefix: "SilverTray")
-    #endif
-}
-
-/// Turn the log enable and disable in `NuguAgents`.
-public var logEnabled: Bool {
-    set {
-        guard newValue == true else {
-            log.configuration.minLogLevel = .nothing
-            return
-        }
-        
-        #if DEBUG
-        log.configuration.minLogLevel = .debug
-        #else
-        log.configuration.minLogLevel = .warning
-        #endif
-    } get {
-        switch log.configuration.minLogLevel {
-        case .nothing:
-            return false
-        default:
-            return true
-        }
-    }
+extension OSLog {
+    private static var subsystem = Bundle(for: DataStreamPlayer.self).bundleIdentifier ?? "SilverTray"
+    static let player = OSLog(subsystem: subsystem, category: "Player")
+    static let audioEngine = OSLog(subsystem: subsystem, category: "AudioEngine")
+    static let decoder = OSLog(subsystem: subsystem, category: "Decoder")
 }
