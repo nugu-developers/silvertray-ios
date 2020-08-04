@@ -1,8 +1,6 @@
 PODS:
-  - NattyLog (1.1.1)
   - RxSwift (5.1.1)
-  - SilverTray (1.0.5):
-    - NattyLog (= 1.1.1)
+  - SilverTray (1.0.8)
 
 DEPENDENCIES:
   - RxSwift
@@ -10,7 +8,6 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - NattyLog
     - RxSwift
 
 EXTERNAL SOURCES:
@@ -18,10 +15,9 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  NattyLog: 2352dbb39f6d117d6ab675fd5e7c227839faaad4
   RxSwift: 81470a2074fa8780320ea5fe4102807cb7118178
-  SilverTray: 5df8bf37a46b3250e671c1afed9e3dc372ab753f
+  SilverTray: 99a29f5fa354924e221e9210bbebf3a27e064c5c
 
 PODFILE CHECKSUM: 6b2f3f2fe0bd9f6fc7ddfba1dcd5928fd7caa4fd
 
-COCOAPODS: 1.8.4
+COCOAPODS: 1.9.3
