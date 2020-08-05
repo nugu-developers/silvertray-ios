@@ -553,7 +553,7 @@ private extension DataStreamPlayer {
     private func printAudioLogs(requestBuffer: AVAudioPCMBuffer? = nil) {
         os_log("audio state:\n\t\trequested format: %@\n\t\tplayer format: %@\n\t\tengine format: %@",
                log: .audioEngine, type: .info,
-               String(describing: requestBuffer?.format), "\(player.inputFormat(forBus: 0))", "\(engine.inputNode.outputFormat(forBus: 0))")
+               String(describing: requestBuffer?.format), "\(player.outputFormat(forBus: 0))", "\(engine.inputNode.outputFormat(forBus: 0))")
         
         #if !os(macOS)
         os_log("\n\t\t%@\n\t\t%@\n\t\taudio session sampleRate: %@",
