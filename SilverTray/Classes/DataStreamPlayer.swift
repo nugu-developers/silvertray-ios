@@ -79,7 +79,7 @@ public class DataStreamPlayer {
     public var state: DataStreamPlayerState = .idle {
         didSet {
             if oldValue != state {
-                os_log("state changed: %{public}@", log: .player, type: .debug, "\(state)")
+                os_log("state changed: %@", log: .player, type: .debug, "\(state)")
                 delegate?.dataStreamPlayerStateDidChange(state)
             }
         }
@@ -152,7 +152,7 @@ public class DataStreamPlayer {
             
             return nil
         }) {
-            os_log("init engine error: %@", log: .audioEngine, type: .error, error.localizedDescription)
+            os_log("init engine error: %@", log: .audioEngine, type: .error, "\(error)")
             throw error
         }
     }
@@ -195,7 +195,7 @@ public class DataStreamPlayer {
             
             return nil
         }) {
-            os_log("connection failed: %@", log: .audioEngine, type: .error, error.localizedDescription)
+            os_log("connection failed: %@", log: .audioEngine, type: .error, "\(error)")
         }
     }
     
@@ -210,7 +210,7 @@ public class DataStreamPlayer {
             
             return nil
         }) {
-            os_log("disconnection failed: %@", log: .audioEngine, type: .error, error.localizedDescription)
+            os_log("disconnection failed: %@", log: .audioEngine, type: .error, "\(error)")
         }
     }
     
@@ -231,7 +231,7 @@ public class DataStreamPlayer {
             do {
                 try self.initEngine()
             } catch {
-                os_log("engine init failed: %@", log: .audioEngine, type: .error, error.localizedDescription)
+                os_log("engine init failed: %@", log: .audioEngine, type: .error, "\(error)")
                 self.state = .error(error)
                 return
             }
@@ -245,6 +245,8 @@ public class DataStreamPlayer {
                 
                 return nil
             }) {
+                os_log("player start failed: %@", log: .audioEngine, type: .error, "\(objcException)")
+                self.printAudioLogs()
                 self.state = .error(objcException)
                 return
             }
@@ -305,7 +307,7 @@ public class DataStreamPlayer {
             os_log("appended data to file: %@", log: .player, type: .debug, "\(appendedFilename)")
             os_log("consumed data to file: %@", log: .player, type: .debug, "\(consumedFilename)")
         } catch {
-            os_log("file write failed: %@", log: .player, type: .error, error.localizedDescription)
+            os_log("file write failed: %@", log: .player, type: .error, "\(error)")
         }
         
         appendedData.removeAll()
@@ -458,12 +460,13 @@ private extension DataStreamPlayer {
         guard self.engine.isRunning == false else { return }
         
         if let objcException = (ObjcExceptionCatcher.objcTry {
-            // For the sound effects
-            connectAudioChain()
-            engine.prepare()
-            
             do {
+                // for the sound effects
+                connectAudioChain()
+                
+                // start audio engine
                 try engine.start()
+                
                 os_log("engine started", log: .audioEngine, type: .debug)
             } catch {
                 return error
@@ -542,16 +545,21 @@ private extension DataStreamPlayer {
             curBufferIndex += 1
             return nil
         }) {
-            os_log("data schedule error: %@\n\t\trequested format: %@\n\t\tplayer format: %@\n\t\tengine format: %@",
-                   log: .audioEngine,
-                   type: .error, error.localizedDescription, String(describing: audioBuffer.format), "\(engine.inputNode.outputFormat(forBus: 0))")
-            
-            #if !os(macOS)
-            os_log("\n\t\t%@\n\t\t%@\n\t\taudio session sampleRate: %@",
-                   log: .audioEngine,
-                   type: .error, "\(AVAudioSession.sharedInstance().category)", "\(AVAudioSession.sharedInstance().categoryOptions)", "\(AVAudioSession.sharedInstance().sampleRate)")
-            #endif
+            os_log("data schedule error: %@", log: .audioEngine, type: .error, "\(error)")
+            printAudioLogs(requestBuffer: audioBuffer)
         }
+    }
+    
+    private func printAudioLogs(requestBuffer: AVAudioPCMBuffer? = nil) {
+        os_log("audio state:\n\t\trequested format: %@\n\t\tplayer format: %@\n\t\tengine format: %@",
+               log: .audioEngine, type: .info,
+               String(describing: requestBuffer?.format), "\(player.inputFormat(forBus: 0))", "\(engine.inputNode.outputFormat(forBus: 0))")
+        
+        #if !os(macOS)
+        os_log("\n\t\t%@\n\t\t%@\n\t\taudio session sampleRate: %@",
+               log: .audioEngine, type: .info,
+               "\(AVAudioSession.sharedInstance().category)", "\(AVAudioSession.sharedInstance().categoryOptions)", "\(AVAudioSession.sharedInstance().sampleRate)")
+        #endif
     }
 }
 
