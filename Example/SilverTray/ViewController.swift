@@ -138,6 +138,7 @@ extension ViewController: DataStreamPlayerDelegate {
     }
     
     func engineConfigurationChange(notification: Notification) {
+        player?.pause()
     }
 }
 
