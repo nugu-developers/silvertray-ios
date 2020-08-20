@@ -144,12 +144,6 @@ public class DataStreamPlayer {
             engine.attach(pitchController)
             #endif
             
-            do {
-                try initEngine()
-            } catch {
-                return error
-            }
-            
             return nil
         }) {
             os_log("init engine error: %@", log: .audioEngine, type: .error, "\(error)")
@@ -241,6 +235,7 @@ public class DataStreamPlayer {
                 self.player.play()
                 self.isPaused = false
                 self.state = .start
+                self.prepareBuffer()
                 os_log("player started", log: .audioEngine, type: .debug)
                 
                 return nil
@@ -370,10 +365,7 @@ extension DataStreamPlayer {
             
             // last data received but recursive scheduler is not started yet.
             if curBufferIndex == 0 {
-                curBufferIndex += (audioBuffers.count - 1)
-                for audioBuffer in audioBuffers {
-                    scheduleBuffer(audioBuffer: audioBuffer)
-                }
+                prepareBuffer()
             }
             
             os_log("duration: %@", log: .player, type: .debug, "\(duration)")
@@ -485,13 +477,15 @@ private extension DataStreamPlayer {
      - seealso: scheduleBuffer()
      */
     func prepareBuffer() {
-        guard curBufferIndex == 0, jitterBufferSize < audioBuffers.count else { return }
+        guard engine.isRunning, curBufferIndex == 0 else { return }
         
         // schedule audio buffers to play
-        for bufferIndex in 0..<jitterBufferSize {
-            if let audioBuffer = audioBuffers[safe: bufferIndex] {
-                curBufferIndex = bufferIndex
-                scheduleBuffer(audioBuffer: audioBuffer)
+        if audioBuffers.count >= jitterBufferSize || lastBuffer != nil {
+            for bufferIndex in 0..<jitterBufferSize {
+                if let audioBuffer = audioBuffers[safe: bufferIndex] {
+                    curBufferIndex = bufferIndex
+                    scheduleBuffer(audioBuffer: audioBuffer)
+                }
             }
         }
     }
