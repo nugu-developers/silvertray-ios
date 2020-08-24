@@ -274,6 +274,10 @@ public class DataStreamPlayer {
     public func stop() {
         os_log("try to stop", log: .audioEngine, type: .debug)
         
+        // To avoid simultanious audio engine control, remove observer hear.
+        NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
+        
         audioQueue.async { [weak self] in
             self?.internalStop()
             self?.state = .stop
@@ -281,15 +285,14 @@ public class DataStreamPlayer {
     }
     
     /**
-     Notification must removed before engine stopped.
-     Or you may face to exception from inside of AVAudioEngine.
+     Stop AVAudioPlayerNode.
+
+     It stops player only. Because Stopping AVAudioEngine can occur the exception within simultanious use case.
+     AVAudioEngine will be released by ARC
+     (This is the weak point of AVAudioEngine)
      */
     func internalStop() {
-        NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
-        NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
-        
         player.stop()
-        engine.stop()
         isPaused = false
         lastBuffer = nil
         curBufferIndex = 0
@@ -363,8 +366,7 @@ extension DataStreamPlayer {
             
             guard 0 < audioBuffers.count else {
                 os_log("No data appended.", log: .player, type: .info)
-                internalStop()
-                state = .finish
+                finish()
                 return
             }
             
@@ -515,8 +517,7 @@ private extension DataStreamPlayer {
                 
                 // If player consumed last buffer
                 guard audioBuffer != self.lastBuffer else {
-                    self.internalStop()
-                    self.state = .finish
+                    self.finish()
                     return
                 }
                 
@@ -550,7 +551,15 @@ private extension DataStreamPlayer {
         }
     }
     
-    private func printAudioLogs(requestBuffer: AVAudioPCMBuffer? = nil) {
+    func finish() {
+        NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
+        NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
+        
+        internalStop()
+        state = .finish
+    }
+    
+    func printAudioLogs(requestBuffer: AVAudioPCMBuffer? = nil) {
         os_log("audio state:\n\t\trequested format: %@\n\t\tplayer format: %@\n\t\tengine format: %@",
                log: .audioEngine, type: .info,
                String(describing: requestBuffer?.format), "\(player.outputFormat(forBus: 0))", "\(engine.inputNode.outputFormat(forBus: 0))")
@@ -566,7 +575,7 @@ private extension DataStreamPlayer {
 
 @objc private extension DataStreamPlayer {
     func engineConfigurationChange(notification: Notification) {
-        os_log("player will be paused by changed engine configuration: \n%@", log: .audioEngine, type: .debug, "\(notification)")
+        os_log("player will be paused by changed engine configuration: \n", log: .audioEngine, type: .debug)
         
         audioQueue.async { [weak self] in
             os_log("reconnect audio chain", log: .audioEngine, type: .debug)
