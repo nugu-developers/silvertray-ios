@@ -44,7 +44,10 @@ public class DataStreamPlayer {
     private var lastBuffer: AVAudioPCMBuffer?
     
     /// Index of buffer to be scheduled
-    private var curBufferIndex = 0
+    private var scheduleBufferIndex = 0
+    
+    /// Index of consumed buffer
+    private var consumedBufferIndex: Int?
     
     /// If samples which is not enough to make chunk appended, It should be stored tempAudioArray and wait for other samples.
     private var tempAudioArray = [Float]()
@@ -87,7 +90,7 @@ public class DataStreamPlayer {
     
     /// current time
     public var offset: Int {
-        return Int((Double(chunkSize * curBufferIndex) / audioFormat.sampleRate) * 1000)
+        return Int((Double(chunkSize * scheduleBufferIndex) / audioFormat.sampleRate) * 1000)
     }
     
     /// duration
@@ -295,7 +298,7 @@ public class DataStreamPlayer {
         player.stop()
         isPaused = false
         lastBuffer = nil
-        curBufferIndex = 0
+        scheduleBufferIndex = 0
         tempAudioArray.removeAll()
         audioBuffers.removeAll()
         
@@ -334,7 +337,8 @@ public class DataStreamPlayer {
             }
             
             let chunkTime = Int((Float(self.chunkSize) / Float(self.audioFormat.sampleRate)) * 1000)
-            self.curBufferIndex = offset / chunkTime
+            self.scheduleBufferIndex = offset / chunkTime
+            os_log("seek to index: %@", log: .player, type: .debug, "\(self.scheduleBufferIndex)")
             completion?(.success(()))
         }
     }
@@ -371,8 +375,8 @@ extension DataStreamPlayer {
             }
             
             // last data received but recursive scheduler is not started yet.
-            if curBufferIndex == 0 {
-                curBufferIndex += (audioBuffers.count - 1)
+            if scheduleBufferIndex == 0 {
+                scheduleBufferIndex += (audioBuffers.count - 1)
                 for audioBuffer in audioBuffers {
                     scheduleBuffer(audioBuffer: audioBuffer)
                 }
@@ -487,12 +491,12 @@ private extension DataStreamPlayer {
      - seealso: scheduleBuffer()
      */
     func prepareBuffer() {
-        guard curBufferIndex == 0, jitterBufferSize < audioBuffers.count else { return }
+        guard scheduleBufferIndex == 0, jitterBufferSize < audioBuffers.count else { return }
         
         // schedule audio buffers to play
         for bufferIndex in 0..<jitterBufferSize {
             if let audioBuffer = audioBuffers[safe: bufferIndex] {
-                curBufferIndex = bufferIndex
+                scheduleBufferIndex = bufferIndex
                 scheduleBuffer(audioBuffer: audioBuffer)
             }
         }
@@ -500,9 +504,18 @@ private extension DataStreamPlayer {
     
     /// schedule buffer and check last data was consumed on it's closure.
     func scheduleBuffer(audioBuffer: AVAudioPCMBuffer) {
+        os_log("schedule audioBuffer index: %@", log: .player, type: .debug, "\(audioBuffers.firstIndex(of: audioBuffer) ?? -1)")
+
         let bufferHandler: AVAudioNodeCompletionHandler = { [weak self] in
             self?.audioQueue.async { [weak self] in
                 guard let self = self else { return }
+                
+                // Though engine is not running. But this clousure is called,
+                // Scheduled buffer might not be played. but just be flushed
+                if self.engine.isRunning == true {
+                    self.consumedBufferIndex = self.audioBuffers.firstIndex(of: audioBuffer)
+                }
+                os_log("consumed audioBuffer index: %@", log: .player, type: .debug, "\(self.consumedBufferIndex ?? -1)")
                 
                 #if DEBUG
                 if let channelData = audioBuffer.floatChannelData?.pointee {
@@ -521,13 +534,13 @@ private extension DataStreamPlayer {
                     return
                 }
                 
-                guard let nextBuffer = self.audioBuffers[safe: self.curBufferIndex] else {
+                guard let nextBuffer = self.audioBuffers[safe: self.scheduleBufferIndex] else {
                     guard self.lastBuffer == nil else { return }
                     os_log("waiting for next audio data.", log: .player, type: .debug)
                     
                     NotificationCenter.default.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
                         guard let self = self else { return }
-                        guard let nextBuffer = self.audioBuffers[safe: self.curBufferIndex] else { return }
+                        guard let nextBuffer = self.audioBuffers[safe: self.scheduleBufferIndex] else { return }
                         
                         os_log("Try to restart scheduler.", log: .player, type: .debug)
                         self.scheduleBuffer(audioBuffer: nextBuffer)
@@ -543,7 +556,7 @@ private extension DataStreamPlayer {
 
         if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
             player.scheduleBuffer(audioBuffer, completionHandler: bufferHandler)
-            curBufferIndex += 1
+            scheduleBufferIndex += 1
             return nil
         }) {
             os_log("data schedule error: %@", log: .audioEngine, type: .error, "\(error)")
@@ -575,18 +588,27 @@ private extension DataStreamPlayer {
 
 @objc private extension DataStreamPlayer {
     func engineConfigurationChange(notification: Notification) {
-        os_log("player will be paused by changed engine configuration: \n", log: .audioEngine, type: .debug)
+        os_log("player will be paused by changed engine configuration", log: .audioEngine, type: .debug)
+        player.pause()
+        let resumeIndex = (consumedBufferIndex ?? -1) + 1
         
         audioQueue.async { [weak self] in
             os_log("reconnect audio chain", log: .audioEngine, type: .debug)
+            guard let self = self else { return }
+
             // Reconnect audio chain
-            self?.disconnectAudioChain()
-            self?.connectAudioChain()
+            self.disconnectAudioChain()
+            self.connectAudioChain()
             
             // We can insist that audio should be resume. If pause() method is not called explicitly.
-            if self?.isPaused == false {
+            if self.isPaused == false {
                 os_log("resume audio", log: .audioEngine, type: .debug)
-                self?.play()
+                os_log("resume index: %@", log: .player, type: .debug, "\(resumeIndex)")
+                
+                let resumeTime = Int((Float(self.chunkSize) / Float(self.audioFormat.sampleRate)) * 1000) * resumeIndex
+                self.seek(to: resumeTime, completion: { _ in
+                    self.play()
+                })
             }
         }
     }
