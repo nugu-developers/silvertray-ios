@@ -1,8 +1,8 @@
 //
-//  SilverTray.swift
+//  Atomic.swift
 //  SilverTray
 //
-//  Created by childc on 2020/05/14.
+//  Created by DCs-MBP on 2020/09/02.
 //  Copyright (c) 2020 SK Telecom Co., Ltd. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,11 +19,23 @@
 //
 
 import Foundation
-import os.log
 
-extension OSLog {
-    private static var subsystem = Bundle(for: DataStreamPlayer.self).bundleIdentifier ?? "SilverTray"
-    static let audioEngine = OSLog(subsystem: subsystem, category: "STDSP_engine")
-    static let player = OSLog(subsystem: subsystem, category: "STDSP_player")
-    static let decoder = OSLog(subsystem: subsystem, category: "STDSP_decoder")
+final class Atomic<Value> {
+    private let queue = DispatchQueue(label: "com.sktelecom.silver_tray.atomic.queue")
+    var value: Value
+    
+    init(_ value: Value) {
+        self.value = value
+    }
+    
+    var atomicValue: Value {
+        get { queue.sync { value } }
+        set { queue.sync { value = newValue } }
+    }
+
+    func atomicMutate(_ transform: (inout Value) -> Void) {
+        queue.sync {
+            transform(&value)
+        }
+    }
 }

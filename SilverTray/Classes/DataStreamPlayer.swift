@@ -28,7 +28,10 @@ import SilverTray.ObjcExceptionCatcher
  Player for data chunks
  */
 public class DataStreamPlayer {
-    private let engine = AVAudioEngine()
+    private static let audioEngineManager = AudioEngineManager<DataStreamPlayer>()
+    private static var id: Atomic<UInt> = Atomic(0)
+    
+    internal let id: UInt
     private let player = AVAudioPlayerNode()
     
     #if !os(watchOS)
@@ -56,12 +59,14 @@ public class DataStreamPlayer {
     private var audioBuffers = [AVAudioPCMBuffer]() {
         didSet {
             if oldValue.count < audioBuffers.count {
-                NotificationCenter.default.post(name: .audioBufferChange, object: nil, userInfo: nil)
+                notificationCenter.post(name: .audioBufferChange, object: nil, userInfo: nil)
             }
         }
     }
     
-    private var audioQueue = DispatchQueue(label: "com.sktelecom.silver_tray.audio")
+    private let audioQueue = DispatchQueue(label: "com.sktelecom.romain.silver_tray.player_queue")
+    private let notificationCenter = NotificationCenter.default
+    private var audioBufferObserver: Any?
     
     #if DEBUG
     private var appendedData = Data()
@@ -70,19 +75,12 @@ public class DataStreamPlayer {
 
     public let decoder: AudioDecodable
     public weak var delegate: DataStreamPlayerDelegate?
-    private var isPaused = false {
-        didSet {
-            if oldValue != isPaused {
-                os_log("paused: %@", log: .player, type: .debug, "\(isPaused)")
-            }
-        }
-    }
     
     /// current state
     public var state: DataStreamPlayerState = .idle {
         didSet {
             if oldValue != state {
-                os_log("state changed: %@", log: .player, type: .debug, "\(state)")
+                os_log("[%@] state changed: %@", log: .player, type: .debug, "\(id)", "\(state)")
                 delegate?.dataStreamPlayerStateDidChange(state)
             }
         }
@@ -135,29 +133,28 @@ public class DataStreamPlayer {
      - If you use the same format of decoder, You can use `init(decoder: AudioDecodable)`
      */
     public init(decoder: AudioDecodable, audioFormat: AVAudioFormat) throws {
+        // Identification
+        var id: UInt = 0
+        DataStreamPlayer.id.atomicMutate {
+            if $0 == UInt.max {
+                $0 = 0
+            }
+            id = $0
+            $0 += 1
+        }
+        
+        self.id = id
         self.audioFormat = audioFormat
         self.decoder = decoder
         
-        if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
-            // Attach nodes
-            engine.attach(player)
-            
-            #if !os(watchOS)
-            engine.attach(speedController)
-            engine.attach(pitchController)
-            #endif
-            
-            do {
-                try initEngine()
-            } catch {
-                return error
-            }
-            
-            return nil
-        }) {
-            os_log("init engine error: %@", log: .audioEngine, type: .error, "\(error)")
-            throw error
-        }
+        // Attach nodes to the engine
+        attachAudioNodes()
+        
+        // Connect AudioPlayer to the engine
+        connectAudioChain()
+        
+        // Hold this instance because properties of this should not be released outside.
+        Self.audioEngineManager.registerObserver(self)
     }
     
     /**
@@ -176,44 +173,59 @@ public class DataStreamPlayer {
         try self.init(decoder: decoder, audioFormat: audioFormat)
     }
     
-    deinit {
-        internalStop()
+    private func attachAudioNodes() {
+        #if !os(watchOS)
+        Self.audioEngineManager.attach(speedController)
+        Self.audioEngineManager.attach(pitchController)
+        #endif
+        
+        Self.audioEngineManager.attach(player)
     }
+    
+    private func detachAudioNodes() {
+        #if !os(watchOS)
+        Self.audioEngineManager.detach(speedController)
+        Self.audioEngineManager.detach(pitchController)
+        #endif
+        
+        Self.audioEngineManager.detach(player)
+    }
+
     
     private func connectAudioChain() {
         if let error = (ObjcExceptionCatcher.objcTry { () -> Error? in
             #if os(watchOS)
-            engine.connect(player, to: engine.mainMixerNode, format: audioFormat)
+            Self.audioEngineManager.connect(player, to: Self.audioEngineManager.mainMixerNode, format: audioFormat)
             #else
             // To control speed, Put speedController into the chain
             // Pitch controller has rate too. But if you adjust it without pitch value, you will get unexpected audio rate.
-            engine.connect(player, to: speedController, format: audioFormat)
+            Self.audioEngineManager.connect(player, to: speedController, format: audioFormat)
             
             // To control pitch, Put pitchController into the chain
-            engine.connect(speedController, to: pitchController, format: audioFormat)
+            Self.audioEngineManager.connect(speedController, to: pitchController, format: audioFormat)
             
             // To control volume, Last of chain must me mixer node.
-            engine.connect(pitchController, to: engine.mainMixerNode, format: audioFormat)
+            Self.audioEngineManager.connect(pitchController, to: Self.audioEngineManager.mainMixerNode, format: audioFormat)
             #endif
             
             return nil
         }) {
-            os_log("connection failed: %@", log: .audioEngine, type: .error, "\(error)")
+            os_log("[%@] connection failed: %@", log: .player, type: .error, "\(id)", "\(error)")
         }
     }
     
     private func disconnectAudioChain() {
         if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
             #if !os(watchOS)
-            engine.disconnectNodeOutput(pitchController)
-            engine.disconnectNodeOutput(speedController)
+            Self.audioEngineManager.disconnectNodeOutput(pitchController)
+            Self.audioEngineManager.disconnectNodeOutput(speedController)
             #endif
             
-            engine.disconnectNodeOutput(player)
+            Self.audioEngineManager.disconnectNodeOutput(player)
             
             return nil
         }) {
-            os_log("disconnection failed: %@", log: .audioEngine, type: .error, "\(error)")
+            os_log("[%@] disconnection failed: %@", log: .player, type: .error, "\(id)", "\(error)")
         }
     }
     
@@ -226,46 +238,39 @@ public class DataStreamPlayer {
      - You can call this method anytime you want. (this player doesn't care whether entire audio data was appened or not)
      */
     public func play() {
-        os_log("try to play data stream", log: .player, type: .debug)
-        
+        os_log("[%@] try to play data stream", log: .player, type: .debug, "\(id)")
+
         audioQueue.async { [weak self] in
-            guard let self = self else { return }
+            self?.internalPlay()
+        }
+    }
+    
+    private func internalPlay() {
+        do {
+            try Self.audioEngineManager.startAudioEngine()
+        } catch {
+             os_log("[%@] audioEngine start failed", log: .audioEngine, type: .debug, "\(id)")
+        }
+        
+        if let objcException = (ObjcExceptionCatcher.objcTry {
+            player.play()
+            os_log("[%@] player started", log: .player, type: .debug, "\(id)")
             
-            do {
-                try self.initEngine()
-            } catch {
-                os_log("engine init failed: %@", log: .audioEngine, type: .error, "\(error)")
-                self.state = .error(error)
-                return
-            }
-            
-            if let objcException = (ObjcExceptionCatcher.objcTry {
-                os_log("try to start player", log: .audioEngine, type: .debug)
-                self.player.play()
-                self.isPaused = false
-                self.state = .start
-                os_log("player started", log: .audioEngine, type: .debug)
-                
-                return nil
-            }) {
-                os_log("player start failed: %@", log: .audioEngine, type: .error, "\(objcException)")
-                self.printAudioLogs()
-                self.state = .error(objcException)
-                return
-            }
-            
-            // if audio session is changed and influence AVAudioEngine, we should handle this.
-            NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
-            NotificationCenter.default.addObserver(self, selector: #selector(self.engineConfigurationChange), name: .AVAudioEngineConfigurationChange, object: nil)
+            state = .start
+            return nil
+        }) {
+            os_log("[%@] player start failed: %@", log: .player, type: .error, "\(id)", "\(objcException)")
+            printAudioLogs()
+            reset()
+            state = .error(objcException)
+            return
         }
     }
     
     public func pause() {
-        os_log("try to pause", log: .audioEngine, type: .debug)
-        
+        os_log("[%@] try to pause", log: .player, type: .debug, "\(id)")
         audioQueue.async { [weak self] in
             self?.player.pause()
-            self?.isPaused = true
             self?.state = .pause
         }
     }
@@ -275,32 +280,37 @@ public class DataStreamPlayer {
     }
     
     public func stop() {
-        os_log("try to stop", log: .audioEngine, type: .debug)
-        
-        // To avoid simultanious audio engine control, remove observer hear.
-        NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
-        NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
+        os_log("[%@] try to stop", log: .player, type: .debug, "\(id)")
         
         audioQueue.async { [weak self] in
-            self?.internalStop()
-            self?.state = .stop
+            guard let self = self else { return }
+            
+            self.reset()
+            self.state = .stop
         }
     }
     
     /**
      Stop AVAudioPlayerNode.
-
-     It stops player only. Because Stopping AVAudioEngine can occur the exception within simultanious use case.
-     AVAudioEngine will be released by ARC
-     (This is the weak point of AVAudioEngine)
      */
-    func internalStop() {
+    func reset() {
+        if let audioBufferObserver = audioBufferObserver {
+            notificationCenter.removeObserver(audioBufferObserver)
+        }
+        
+        // Detach nodes
+        disconnectAudioChain()
+        detachAudioNodes()
+        
         player.stop()
-        isPaused = false
         lastBuffer = nil
         scheduleBufferIndex = 0
         tempAudioArray.removeAll()
         audioBuffers.removeAll()
+        
+        if Self.audioEngineManager.removeObserver(self) == nil {
+            os_log("[%@] removing observer failed", log: .player, type: .default, "\(id)")
+        }
         
         #if DEBUG
         let appendedFilename = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("silver_tray_appended.encoded")
@@ -310,10 +320,10 @@ public class DataStreamPlayer {
             try self.appendedData.write(to: appendedFilename)
             try self.consumedData.write(to: consumedFilename)
             
-            os_log("appended data to file: %@", log: .player, type: .debug, "\(appendedFilename)")
-            os_log("consumed data to file: %@", log: .player, type: .debug, "\(consumedFilename)")
+            os_log("[%@] appended data to file: %{private}@", log: .player, type: .debug, "\(id)", "\(appendedFilename)")
+            os_log("[%@] consumed data to file: %{private}@", log: .player, type: .debug, "\(id)", "\(consumedFilename)")
         } catch {
-            os_log("file write failed: %@", log: .player, type: .error, "\(error)")
+            os_log("[%@] file write failed: %@", log: .player, type: .error, "\(id)", "\(error)")
         }
         
         appendedData.removeAll()
@@ -326,7 +336,7 @@ public class DataStreamPlayer {
      - parameter to: seek time (millisecond)
      */
     public func seek(to offset: Int, completion: ((Result<Void, Error>) -> Void)?) {
-        os_log("try to seek: %@", log: .player, type: .debug, "\(offset)")
+        os_log("[%@] try to seek: %@", log: .player, type: .debug, "\(id)", "\(offset)")
 
         audioQueue.async { [weak self] in
             guard let self = self else { return }
@@ -338,7 +348,7 @@ public class DataStreamPlayer {
             
             let chunkTime = Int((Float(self.chunkSize) / Float(self.audioFormat.sampleRate)) * 1000)
             self.scheduleBufferIndex = offset / chunkTime
-            os_log("seek to index: %@", log: .player, type: .debug, "\(self.scheduleBufferIndex)")
+            os_log("[%@] seek to index: %@", log: .player, type: .debug, "\(self.id)", "\(self.scheduleBufferIndex)")
             completion?(.success(()))
         }
     }
@@ -353,36 +363,34 @@ extension DataStreamPlayer {
      - Player can calculate duration of TTS.
      */
     public func lastDataAppended() throws {
-        os_log("Last data appended. No data can be appended any longer.", log: .player, type: .debug)
+        os_log("[%@] last data appended. No data can be appended any longer.", log: .player, type: .debug, "\(id)")
+        
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
 
-        try audioQueue.sync {
-            guard lastBuffer == nil else {
-                throw DataStreamPlayerError.audioBufferClosed
-            }
-
-            if 0 < tempAudioArray.count, let lastPcmData = tempAudioArray.pcmBuffer(format: audioFormat) {
-                os_log("Temp audio data will be scheduled. Because it is last data.", log: .player, type: .debug)
-                audioBuffers.append(lastPcmData)
+            if 0 < self.tempAudioArray.count, let lastPcmData = self.tempAudioArray.pcmBuffer(format: self.audioFormat) {
+                os_log("[%@] temp audio data will be scheduled. Because it is last data.", log: .player, type: .debug, "\(self.id)")
+                self.audioBuffers.append(lastPcmData)
             }
             
-            lastBuffer = audioBuffers.last
-            tempAudioArray.removeAll()
+            self.lastBuffer = self.audioBuffers.last
+            self.tempAudioArray.removeAll()
             
-            guard 0 < audioBuffers.count else {
-                os_log("No data appended.", log: .player, type: .info)
-                finish()
+            guard 0 < self.audioBuffers.count else {
+                os_log("[%@] no data appended.", log: .player, type: .info, "\(self.id)")
+                self.finish()
                 return
             }
             
             // last data received but recursive scheduler is not started yet.
-            if scheduleBufferIndex == 0 {
-                scheduleBufferIndex += (audioBuffers.count - 1)
-                for audioBuffer in audioBuffers {
-                    scheduleBuffer(audioBuffer: audioBuffer)
+            if self.scheduleBufferIndex == 0 {
+                self.scheduleBufferIndex += (self.audioBuffers.count - 1)
+                for audioBuffer in self.audioBuffers {
+                    self.scheduleBuffer(audioBuffer: audioBuffer)
                 }
             }
             
-            os_log("duration: %@", log: .player, type: .debug, "\(duration)")
+            os_log("[%@] duration: %@", log: .player, type: .debug, "\(self.id)", "\(self.duration)")
         }
     }
     
@@ -392,30 +400,29 @@ extension DataStreamPlayer {
      - parameter data: the data to be decoded and played.
      */
     public func appendData(_ data: Data) throws {
-        try audioQueue.sync {
-            guard lastBuffer == nil else {
-                throw DataStreamPlayerError.audioBufferClosed
-            }
+        audioQueue.async { [weak self] in
+            guard let self = self else { return }
             
             #if DEBUG
-            appendedData.append(data)
+            self.appendedData.append(data)
             #endif
             
             let pcmData: [Float]
             do {
-                pcmData = try decoder.decode(data: data)
+                pcmData = try self.decoder.decode(data: data)
             } catch {
-                os_log("Decode failed", log: .decoder, type: .error)
-                state = .error(error)
+                os_log("[%@] decode failed", log: .decoder, type: .error, "\(self.id)")
+                self.reset()
+                self.state = .error(error)
                 return
             }
 
             // Lasting audio data has to be added to schedule it.
             var audioDataArray = [Float]()
-            if 0 < tempAudioArray.count {
-                audioDataArray.append(contentsOf: tempAudioArray)
+            if 0 < self.tempAudioArray.count {
+                audioDataArray.append(contentsOf: self.tempAudioArray)
 //                log.debug("temp audio processing: \(self.tempAudioArray.count)")
-                tempAudioArray.removeAll()
+                self.tempAudioArray.removeAll()
             }
             audioDataArray.append(contentsOf: pcmData)
             
@@ -423,16 +430,16 @@ extension DataStreamPlayer {
             var pcmBufferArray = [AVAudioPCMBuffer]()
             while bufferPosition < audioDataArray.count {
                 // If it's not a last data but smaller than chunk size, Put it into the tempAudioArray for future processing
-                guard bufferPosition + chunkSize < audioDataArray.count else {
-                    tempAudioArray.append(contentsOf: audioDataArray[bufferPosition..<audioDataArray.count])
+                guard bufferPosition + self.chunkSize < audioDataArray.count else {
+                    self.tempAudioArray.append(contentsOf: audioDataArray[bufferPosition..<audioDataArray.count])
 //                    log.debug("tempAudio size: \(self.tempAudioArray.count), chunkSize: \(self.chunkSize)")
                     break
                 }
                 
                 // Though the data is smaller than chunk, But it has to be scheduled.
-                let bufferSize = min(chunkSize, audioDataArray.count - bufferPosition)
+                let bufferSize = min(self.chunkSize, audioDataArray.count - bufferPosition)
                 let chunk = Array(audioDataArray[bufferPosition..<(bufferPosition + bufferSize)])
-                guard let pcmBuffer = chunk.pcmBuffer(format: audioFormat) else {
+                guard let pcmBuffer = chunk.pcmBuffer(format: self.audioFormat) else {
                     continue
                 }
                 
@@ -441,8 +448,8 @@ extension DataStreamPlayer {
             }
             
             if 0 < pcmBufferArray.count {
-                audioBuffers.append(contentsOf: pcmBufferArray)
-                prepareBuffer()
+                self.audioBuffers.append(contentsOf: pcmBufferArray)
+                self.prepareBuffer()
             }
         }
     }
@@ -462,28 +469,6 @@ extension DataStreamPlayer {
 
 // MARK: private functions
 private extension DataStreamPlayer {
-    func initEngine() throws {
-        guard self.engine.isRunning == false else { return }
-        
-        if let objcException = (ObjcExceptionCatcher.objcTry {
-            do {
-                // for the sound effects
-                connectAudioChain()
-                
-                // start audio engine
-                try engine.start()
-                
-                os_log("engine started", log: .audioEngine, type: .debug)
-            } catch {
-                return error
-            }
-            
-            return nil
-        }) {
-            throw objcException
-        }
-    }
-    
     /**
      DataStreamPlayer has jitter buffers to play stably.
      First of all, schedule jitter size of Buffers at ones.
@@ -504,18 +489,17 @@ private extension DataStreamPlayer {
     
     /// schedule buffer and check last data was consumed on it's closure.
     func scheduleBuffer(audioBuffer: AVAudioPCMBuffer) {
-        os_log("schedule audioBuffer index: %@", log: .player, type: .debug, "\(audioBuffers.firstIndex(of: audioBuffer) ?? -1)")
-
         let bufferHandler: AVAudioNodeCompletionHandler = { [weak self] in
             self?.audioQueue.async { [weak self] in
                 guard let self = self else { return }
                 
-                // Though engine is not running. But this clousure is called,
-                // Scheduled buffer might not be played. but just be flushed
-                if self.engine.isRunning == true {
+                // Though engine is not running, But this clousure can be called,
+                // Scheduled buffer might not be played. but just be flushed in this situation.
+                if Self.audioEngineManager.isRunning == true {
                     self.consumedBufferIndex = self.audioBuffers.firstIndex(of: audioBuffer)
+                } else {
+                    os_log("[%@] flushed audioBuffer index: %@", log: .player, type: .info, "\(self.id)", "\(self.audioBuffers.firstIndex(of: audioBuffer) ?? -1)")
                 }
-                os_log("consumed audioBuffer index: %@", log: .player, type: .debug, "\(self.consumedBufferIndex ?? -1)")
                 
                 #if DEBUG
                 if let channelData = audioBuffer.floatChannelData?.pointee {
@@ -536,16 +520,18 @@ private extension DataStreamPlayer {
                 
                 guard let nextBuffer = self.audioBuffers[safe: self.scheduleBufferIndex] else {
                     guard self.lastBuffer == nil else { return }
-                    os_log("waiting for next audio data.", log: .player, type: .debug)
+                    os_log("[%@] waiting for next audio data.", log: .player, type: .debug, "\(self.id)")
                     
-                    NotificationCenter.default.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
+                    self.notificationCenter.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
                         guard let self = self else { return }
                         guard let nextBuffer = self.audioBuffers[safe: self.scheduleBufferIndex] else { return }
                         
-                        os_log("Try to restart scheduler.", log: .player, type: .debug)
+                        os_log("[%@] Try to restart scheduler.", log: .player, type: .debug, "\(self.id)")
                         self.scheduleBuffer(audioBuffer: nextBuffer)
                         
-                        NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
+                        if let audioBufferObserver = self.audioBufferObserver {
+                            self.notificationCenter.removeObserver(audioBufferObserver)
+                        }
                     }
                     return
                 }
@@ -559,57 +545,63 @@ private extension DataStreamPlayer {
             scheduleBufferIndex += 1
             return nil
         }) {
-            os_log("data schedule error: %@", log: .audioEngine, type: .error, "\(error)")
+            os_log("[%@] data schedule error: %@", log: .player, type: .error, "\(id)", "\(error)")
             printAudioLogs(requestBuffer: audioBuffer)
         }
     }
     
     func finish() {
-        NotificationCenter.default.removeObserver(self, name: .AVAudioEngineConfigurationChange, object: nil)
-        NotificationCenter.default.removeObserver(self, name: .audioBufferChange, object: self)
-        
-        internalStop()
+        reset()
         state = .finish
     }
     
     func printAudioLogs(requestBuffer: AVAudioPCMBuffer? = nil) {
-        os_log("audio state:\n\t\trequested format: %@\n\t\tplayer format: %@\n\t\tengine format: %@",
-               log: .audioEngine, type: .info,
-               String(describing: requestBuffer?.format), "\(player.outputFormat(forBus: 0))", "\(engine.inputNode.outputFormat(forBus: 0))")
+        os_log("[%@] audio state:\n\t\trequested format: %@\n\t\tplayer format: %@\n\t\tengine format: %@",
+               log: .player, type: .info,
+               "\(id)", String(describing: requestBuffer?.format), "\(player.outputFormat(forBus: 0))", "\(Self.audioEngineManager.inputNode.outputFormat(forBus: 0))")
         
         #if !os(macOS)
-        os_log("\n\t\t%@\n\t\t%@\n\t\taudio session sampleRate: %@",
-               log: .audioEngine, type: .info,
-               "\(AVAudioSession.sharedInstance().category)", "\(AVAudioSession.sharedInstance().categoryOptions)", "\(AVAudioSession.sharedInstance().sampleRate)")
+        os_log("[%@] session state: \n\t\t%@\n\t\t%@\n\t\taudio session sampleRate: %@",
+               log: .player, type: .info,
+               "\(id)", "\(AVAudioSession.sharedInstance().category)", "\(AVAudioSession.sharedInstance().categoryOptions)", "\(AVAudioSession.sharedInstance().sampleRate)")
         #endif
     }
 }
 
+// MARK: - Hashable
+extension DataStreamPlayer: Hashable {
+    public static func == (lhs: DataStreamPlayer, rhs: DataStreamPlayer) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id.hashValue)
+    }
+}
 
-@objc private extension DataStreamPlayer {
+
+// MARK: - AudioEngineObserver
+
+extension DataStreamPlayer: AudioEngineObservable {
     func engineConfigurationChange(notification: Notification) {
-        os_log("player will be paused by changed engine configuration", log: .audioEngine, type: .debug)
-        player.pause()
-        let resumeIndex = (consumedBufferIndex ?? -1) + 1
+        os_log("[%@] player will be paused by changed engine configuration", log: .player, type: .debug, "\(id)")
         
         audioQueue.async { [weak self] in
-            os_log("reconnect audio chain", log: .audioEngine, type: .debug)
             guard let self = self else { return }
 
-            // Reconnect audio chain
-            self.disconnectAudioChain()
-            self.connectAudioChain()
-            
-            // We can insist that audio should be resume. If pause() method is not called explicitly.
-            if self.isPaused == false {
-                os_log("resume audio", log: .audioEngine, type: .debug)
-                os_log("resume index: %@", log: .player, type: .debug, "\(resumeIndex)")
-                
-                let resumeTime = Int((Float(self.chunkSize) / Float(self.audioFormat.sampleRate)) * 1000) * resumeIndex
-                self.seek(to: resumeTime, completion: { _ in
-                    self.play()
-                })
+            // Notification could be fired though the observer was removed.
+            guard [.stop, .finish, .pause].contains(self.state) == false else {
+                return
             }
+
+            self.player.pause()
+//            let resumeIndex = (self.consumedBufferIndex ?? -1) + 1
+//            os_log("[%@] resume index: %@", log: .player, type: .debug, "\(self.id)", "\(resumeIndex)")
+//
+//            let resumeTime = Int((Float(self.chunkSize) / Float(self.audioFormat.sampleRate)) * 1000) * resumeIndex
+//            self.seek(to: resumeTime, completion: { [weak self] _ in
+            self.internalPlay()
+//            })
         }
     }
 }
