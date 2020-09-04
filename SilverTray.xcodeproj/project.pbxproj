@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7319586E250205AB0026B052 /* AudioEngineObservable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7319586C250205AB0026B052 /* AudioEngineObservable.swift */; };
+		7319586F250205AB0026B052 /* AudioEngineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7319586D250205AB0026B052 /* AudioEngineManager.swift */; };
+		73195871250205B50026B052 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73195870250205B50026B052 /* Atomic.swift */; };
 		7365082A24628EDE00EF4549 /* DataStreamPlayerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365080924628EDD00EF4549 /* DataStreamPlayerState.swift */; };
 		7365082B24628EDE00EF4549 /* DataStreamPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365080A24628EDD00EF4549 /* DataStreamPlayer.swift */; };
 		7365082C24628EDE00EF4549 /* DataStreamPlayerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365080B24628EDD00EF4549 /* DataStreamPlayerDelegate.swift */; };
@@ -29,6 +32,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7319586C250205AB0026B052 /* AudioEngineObservable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioEngineObservable.swift; sourceTree = "<group>"; };
+		7319586D250205AB0026B052 /* AudioEngineManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioEngineManager.swift; sourceTree = "<group>"; };
+		73195870250205B50026B052 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
 		736507FD24628E7B00EF4549 /* SilverTray.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SilverTray.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7365080124628E7B00EF4549 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7365080924628EDD00EF4549 /* DataStreamPlayerState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataStreamPlayerState.swift; sourceTree = "<group>"; };
@@ -65,6 +71,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7319586B250205AB0026B052 /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				7319586C250205AB0026B052 /* AudioEngineObservable.swift */,
+				7319586D250205AB0026B052 /* AudioEngineManager.swift */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
 		736507F324628E7B00EF4549 = {
 			isa = PBXGroup;
 			children = (
@@ -95,6 +110,7 @@
 		7365080824628EDD00EF4549 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				7319586B250205AB0026B052 /* Engine */,
 				73650888246D4F3C00EF4549 /* SilverTray.swift */,
 				7365080924628EDD00EF4549 /* DataStreamPlayerState.swift */,
 				7365080A24628EDD00EF4549 /* DataStreamPlayer.swift */,
@@ -112,6 +128,7 @@
 		7365080F24628EDD00EF4549 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				73195870250205B50026B052 /* Atomic.swift */,
 				7365081024628EDD00EF4549 /* ObjcExceptionCatcher.m */,
 				7365081124628EDD00EF4549 /* ObjcExceptionCatcher.h */,
 			);
@@ -270,8 +287,11 @@
 			files = (
 				7365082E24628EDE00EF4549 /* Codec.swift in Sources */,
 				7365082C24628EDE00EF4549 /* DataStreamPlayerDelegate.swift in Sources */,
+				7319586F250205AB0026B052 /* AudioEngineManager.swift in Sources */,
 				73650889246D4F3C00EF4549 /* SilverTray.swift in Sources */,
+				73195871250205B50026B052 /* Atomic.swift in Sources */,
 				7365083224628EDE00EF4549 /* Collection+Convenience.swift in Sources */,
+				7319586E250205AB0026B052 /* AudioEngineObservable.swift in Sources */,
 				7365083024628EDE00EF4549 /* ObjcExceptionCatcher.m in Sources */,
 				7365083324628EDE00EF4549 /* AudioDecodable.swift in Sources */,
 				7365082B24628EDE00EF4549 /* DataStreamPlayer.swift in Sources */,
