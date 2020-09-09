@@ -1,8 +1,8 @@
 //
-//  ObjcExceptionCatcher.m
-//  NuguCore
+//  UnifiedErrorCatcher.h
+//  SilverTray
 //
-//  Created by DCs-OfficeMBP on 24/05/2019.
+//  Created by childc on 18/03/2019.
 //  Copyright (c) 2019 SK Telecom Co., Ltd. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,19 +19,9 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "ObjcExceptionCatcher.h"
 
-@implementation ObjcExceptionCatcher
+@interface UnifiedErrorCatcher : NSObject
 
-+ (NSError *)objcTry:(NSError*(NS_NOESCAPE ^)(void))tryBlock {
-    @try {
-        tryBlock();
-    } @catch (NSException *exception) {
-        NSError *error = [[NSError alloc] initWithDomain:exception.name code:0 userInfo:exception.userInfo];
-        return error;
-    }
-    
-    return nil;
-}
++ (NSError *)try:(NSError*(NS_NOESCAPE ^)(void))tryBlock;
 
 @end

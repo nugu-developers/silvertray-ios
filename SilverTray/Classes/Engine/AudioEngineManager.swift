@@ -38,9 +38,10 @@ class AudioEngineManager<Observer: AudioEngineObservable> {
         audioEngine.atomicMutate { engine in
             guard engine.isRunning == false else { return }
             
-            if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
+            if let error = UnifiedErrorCatcher.try({ () -> Error? in
                 do {
                     // start audio engine
+                    // This Api throws `Error` and raises `NSException` both.
                     try engine.start()
                     
                     os_log("audioEngine started", log: .audioEngine, type: .debug)
@@ -74,14 +75,14 @@ class AudioEngineManager<Observer: AudioEngineObservable> {
             notificationCenter.removeObserver(audioEngineConfigurationObserver)
         }
         
-        if let objcException = (ObjcExceptionCatcher.objcTry {
+        if let error = (UnifiedErrorCatcher.try {
             // start audio engine
             audioEngine.atomicValue.stop()
             
             os_log("audioEngine stopped", log: .audioEngine, type: .debug)
             return nil
         }) {
-            throw objcException
+            throw error
         }
     }
 }

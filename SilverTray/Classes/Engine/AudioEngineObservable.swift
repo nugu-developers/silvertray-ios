@@ -2,7 +2,7 @@
 //  AudioEngineObservable.swift
 //  SilverTray
 //
-//  Created by DCs-MBP on 2020/09/01.
+//  Created by childc on 2020/09/01.
 //  Copyright (c) 2020 SK Telecom Co., Ltd. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");

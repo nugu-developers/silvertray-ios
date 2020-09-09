@@ -2,7 +2,7 @@
 //  DataStreamPlayer.swift
 //  SilverTray
 //
-//  Created by DCs-OfficeMBP on 24/01/2019.
+//  Created by childc on 24/01/2019.
 //  Copyright (c) 2020 SK Telecom Co., Ltd. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@ import Foundation
 import AVFoundation
 import os.log
 
-import SilverTray.ObjcExceptionCatcher
+import SilverTray.UnifiedErrorCatcher
 
 /**
  Player for data chunks
@@ -147,11 +147,17 @@ public class DataStreamPlayer {
         self.audioFormat = audioFormat
         self.decoder = decoder
         
-        // Attach nodes to the engine
-        attachAudioNodes()
-        
-        // Connect AudioPlayer to the engine
-        connectAudioChain()
+        if let error = UnifiedErrorCatcher.try ({
+            // Attach nodes to the engine
+            attachAudioNodes()
+            
+            // Connect AudioPlayer to the engine
+            connectAudioChain()
+            
+            return nil
+        }) {
+            throw error
+        }
         
         // Hold this instance because properties of this should not be released outside.
         Self.audioEngineManager.registerObserver(self)
@@ -193,7 +199,7 @@ public class DataStreamPlayer {
 
     
     private func connectAudioChain() {
-        if let error = (ObjcExceptionCatcher.objcTry { () -> Error? in
+        if let error = (UnifiedErrorCatcher.try { () -> Error? in
             #if os(watchOS)
             Self.audioEngineManager.connect(player, to: Self.audioEngineManager.mainMixerNode, format: audioFormat)
             #else
@@ -215,7 +221,7 @@ public class DataStreamPlayer {
     }
     
     private func disconnectAudioChain() {
-        if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
+        if let error = UnifiedErrorCatcher.try({ () -> Error? in
             #if !os(watchOS)
             Self.audioEngineManager.disconnectNodeOutput(pitchController)
             Self.audioEngineManager.disconnectNodeOutput(speedController)
@@ -252,17 +258,17 @@ public class DataStreamPlayer {
              os_log("[%@] audioEngine start failed", log: .audioEngine, type: .debug, "\(id)")
         }
         
-        if let objcException = (ObjcExceptionCatcher.objcTry {
+        if let error = (UnifiedErrorCatcher.try {
             player.play()
             os_log("[%@] player started", log: .player, type: .debug, "\(id)")
             
             state = .start
             return nil
         }) {
-            os_log("[%@] player start failed: %@", log: .player, type: .error, "\(id)", "\(objcException)")
+            os_log("[%@] player start failed: %@", log: .player, type: .error, "\(id)", "\(error)")
             printAudioLogs()
             reset()
-            state = .error(objcException)
+            state = .error(error)
             return
         }
     }
@@ -365,6 +371,12 @@ extension DataStreamPlayer {
     public func lastDataAppended() throws {
         os_log("[%@] last data appended. No data can be appended any longer.", log: .player, type: .debug, "\(id)")
         
+        try audioQueue.sync {
+            guard lastBuffer == nil else {
+                throw DataStreamPlayerError.audioBufferClosed
+            }
+        }
+        
         audioQueue.async { [weak self] in
             guard let self = self else { return }
 
@@ -400,6 +412,12 @@ extension DataStreamPlayer {
      - parameter data: the data to be decoded and played.
      */
     public func appendData(_ data: Data) throws {
+        try audioQueue.sync {
+            guard lastBuffer == nil else {
+                throw DataStreamPlayerError.audioBufferClosed
+            }
+        }
+        
         audioQueue.async { [weak self] in
             guard let self = self else { return }
             
@@ -540,7 +558,7 @@ private extension DataStreamPlayer {
             }
         }
 
-        if let error = ObjcExceptionCatcher.objcTry({ () -> Error? in
+        if let error = UnifiedErrorCatcher.try({ () -> Error? in
             player.scheduleBuffer(audioBuffer, completionHandler: bufferHandler)
             scheduleBufferIndex += 1
             return nil

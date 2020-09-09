@@ -3,8 +3,8 @@ framework module SilverTray {
     export *
     module * { export * }
     
-    explicit module ObjcExceptionCatcher {
-        header "ObjcExceptionCatcher.h"
+    explicit module UnifiedErrorCatcher {
+        header "UnifiedErrorCatcher.h"
         link "SilverTray"
         export *
     }

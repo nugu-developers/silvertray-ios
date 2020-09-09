@@ -29,26 +29,25 @@ class ViewController: UIViewController {
                                                          mode: .default,
                                                          options: [.defaultToSpeaker])
         
-        DispatchQueue.main.async { [weak self] in
-            guard let opusFileUrl = Bundle.main.url(forResource: "attachment", withExtension: "opus"),
-                let opusData = try? Data(contentsOf: opusFileUrl) else {
-                    return
+        guard let opusFileUrl = Bundle.main.url(forResource: "attachment", withExtension: "opus"),
+            let opusData = try? Data(contentsOf: opusFileUrl) else {
+                return
+        }
+        
+        for _ in (0..<4) {
+            try? SktOpusParser.parse(from: opusData).forEach { (chunk) in
+                try player?.appendData(chunk)
             }
-            
-            for _ in (0..<4) {
-                try? SktOpusParser.parse(from: opusData).forEach { (chunk) in
-                    try self?.player?.appendData(chunk)
-                }
-            }
-            try? self?.player?.lastDataAppended()
-            
+        }
+        try? player?.lastDataAppended()
+        player?.speed = 0.91875
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.seekBar.minimumValue = 0.0
             self?.seekBar.maximumValue = Float(self?.player?.duration ?? 0)
             self?.seekBar.isEnabled = true
-            
-            self?.player?.speed = 0.91875
-            //        player.volume = 0.1
-            //        player?.pitch += 300
             self?.updateSlider()
         }
     }
@@ -87,7 +86,7 @@ class ViewController: UIViewController {
     }
     
     @IBAction func sliderValueChanged(_ sender: UISlider) {
-        os_log("%@", log: .app, type: .debug, "seek to: \(sender.value), (\(sender.minimumValue)..<\(sender.maximumValue)")
+        os_log("%@", log: .app, type: .debug, "seek to: \(sender.value), (\(sender.minimumValue)..<\(sender.maximumValue))")
         
         player?.seek(to: Int(sender.value), completion: { [weak self] (result) in
             os_log("%@", log: .app, type:.debug, "result of seek: \(result)")
