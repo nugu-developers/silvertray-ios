@@ -449,7 +449,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/SilverTray/Libraries/Opus/Binary/iOS",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				MODULEMAP_FILE = "$(SRCROOT)/SilverTray/SilverTray.modulemap";
 				OTHER_LDFLAGS = (
 					"-Xlinker",
@@ -489,7 +489,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/SilverTray/Libraries/Opus/Binary/iOS",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				MODULEMAP_FILE = "$(SRCROOT)/SilverTray/SilverTray.modulemap";
 				OTHER_LDFLAGS = (
 					"-Xlinker",
