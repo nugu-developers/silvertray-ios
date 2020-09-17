@@ -22,8 +22,6 @@ import Foundation
 import AVFoundation
 import os.log
 
-import SilverTray.UnifiedErrorCatcher
-
 /**
  Player for data chunks
  */
@@ -147,7 +145,7 @@ public class DataStreamPlayer {
         self.audioFormat = audioFormat
         self.decoder = decoder
         
-        if let error = UnifiedErrorCatcher.try ({
+        if let error = STUnifiedErrorCatcher.try ({
             // Attach nodes to the engine
             attachAudioNodes()
             
@@ -199,7 +197,7 @@ public class DataStreamPlayer {
 
     
     private func connectAudioChain() {
-        if let error = (UnifiedErrorCatcher.try { () -> Error? in
+        if let error = (STUnifiedErrorCatcher.try { () -> Error? in
             #if os(watchOS)
             Self.audioEngineManager.connect(player, to: Self.audioEngineManager.mainMixerNode, format: audioFormat)
             #else
@@ -221,7 +219,7 @@ public class DataStreamPlayer {
     }
     
     private func disconnectAudioChain() {
-        if let error = UnifiedErrorCatcher.try({ () -> Error? in
+        if let error = STUnifiedErrorCatcher.try({ () -> Error? in
             #if !os(watchOS)
             Self.audioEngineManager.disconnectNodeOutput(pitchController)
             Self.audioEngineManager.disconnectNodeOutput(speedController)
@@ -258,7 +256,7 @@ public class DataStreamPlayer {
              os_log("[%@] audioEngine start failed", log: .audioEngine, type: .debug, "\(id)")
         }
         
-        if let error = (UnifiedErrorCatcher.try {
+        if let error = (STUnifiedErrorCatcher.try {
             player.play()
             os_log("[%@] player started", log: .player, type: .debug, "\(id)")
             
@@ -558,7 +556,7 @@ private extension DataStreamPlayer {
             }
         }
 
-        if let error = UnifiedErrorCatcher.try({ () -> Error? in
+        if let error = STUnifiedErrorCatcher.try({ () -> Error? in
             player.scheduleBuffer(audioBuffer, completionHandler: bufferHandler)
             scheduleBufferIndex += 1
             return nil
