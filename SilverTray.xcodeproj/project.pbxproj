@@ -10,8 +10,6 @@
 		7319586E250205AB0026B052 /* AudioEngineObservable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7319586C250205AB0026B052 /* AudioEngineObservable.swift */; };
 		7319586F250205AB0026B052 /* AudioEngineManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7319586D250205AB0026B052 /* AudioEngineManager.swift */; };
 		73195871250205B50026B052 /* Atomic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73195870250205B50026B052 /* Atomic.swift */; };
-		73603A6E2508E67E00D9368F /* UnifiedErrorCatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 73603A6B2508E67E00D9368F /* UnifiedErrorCatcher.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		73603A6F2508E67E00D9368F /* UnifiedErrorCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 73603A6C2508E67E00D9368F /* UnifiedErrorCatcher.m */; };
 		7365082A24628EDE00EF4549 /* DataStreamPlayerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365080924628EDD00EF4549 /* DataStreamPlayerState.swift */; };
 		7365082B24628EDE00EF4549 /* DataStreamPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365080A24628EDD00EF4549 /* DataStreamPlayer.swift */; };
 		7365082C24628EDE00EF4549 /* DataStreamPlayerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365080B24628EDD00EF4549 /* DataStreamPlayerDelegate.swift */; };
@@ -21,22 +19,22 @@
 		7365083224628EDE00EF4549 /* Collection+Convenience.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365081324628EDD00EF4549 /* Collection+Convenience.swift */; };
 		7365083324628EDE00EF4549 /* AudioDecodable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365081524628EDD00EF4549 /* AudioDecodable.swift */; };
 		7365083424628EDE00EF4549 /* OpusDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7365081624628EDD00EF4549 /* OpusDecoder.swift */; };
-		7365083524628EDE00EF4549 /* opus.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081A24628EDD00EF4549 /* opus.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		7365083624628EDE00EF4549 /* opus_multistream.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081B24628EDD00EF4549 /* opus_multistream.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		7365083724628EDE00EF4549 /* opus_custom.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081C24628EDD00EF4549 /* opus_custom.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		7365083824628EDE00EF4549 /* opus_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081D24628EDD00EF4549 /* opus_types.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		7365083924628EDE00EF4549 /* opus_defines.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081E24628EDD00EF4549 /* opus_defines.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		7365083A24628EDE00EF4549 /* opus_projection.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081F24628EDD00EF4549 /* opus_projection.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		7365083524628EDE00EF4549 /* opus.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081A24628EDD00EF4549 /* opus.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7365083624628EDE00EF4549 /* opus_multistream.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081B24628EDD00EF4549 /* opus_multistream.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7365083724628EDE00EF4549 /* opus_custom.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081C24628EDD00EF4549 /* opus_custom.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7365083824628EDE00EF4549 /* opus_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081D24628EDD00EF4549 /* opus_types.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7365083924628EDE00EF4549 /* opus_defines.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081E24628EDD00EF4549 /* opus_defines.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7365083A24628EDE00EF4549 /* opus_projection.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081F24628EDD00EF4549 /* opus_projection.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7365083D24628EDE00EF4549 /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7365082624628EDD00EF4549 /* libopus.a */; };
 		73650889246D4F3C00EF4549 /* SilverTray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73650888246D4F3C00EF4549 /* SilverTray.swift */; };
+		7E553C76251326F0008E4D89 /* STUnifiedErrorCatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E553C74251326F0008E4D89 /* STUnifiedErrorCatcher.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7E553C77251326F0008E4D89 /* STUnifiedErrorCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E553C75251326F0008E4D89 /* STUnifiedErrorCatcher.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		7319586C250205AB0026B052 /* AudioEngineObservable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioEngineObservable.swift; sourceTree = "<group>"; };
 		7319586D250205AB0026B052 /* AudioEngineManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AudioEngineManager.swift; sourceTree = "<group>"; };
 		73195870250205B50026B052 /* Atomic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Atomic.swift; sourceTree = "<group>"; };
-		73603A6B2508E67E00D9368F /* UnifiedErrorCatcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UnifiedErrorCatcher.h; sourceTree = "<group>"; };
-		73603A6C2508E67E00D9368F /* UnifiedErrorCatcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UnifiedErrorCatcher.m; sourceTree = "<group>"; };
 		736507FD24628E7B00EF4549 /* SilverTray.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SilverTray.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7365080124628E7B00EF4549 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7365080924628EDD00EF4549 /* DataStreamPlayerState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataStreamPlayerState.swift; sourceTree = "<group>"; };
@@ -57,6 +55,8 @@
 		7365082624628EDD00EF4549 /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopus.a; sourceTree = "<group>"; };
 		7365082924628EDD00EF4549 /* SilverTray.modulemap */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = SilverTray.modulemap; sourceTree = "<group>"; };
 		73650888246D4F3C00EF4549 /* SilverTray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SilverTray.swift; sourceTree = "<group>"; };
+		7E553C74251326F0008E4D89 /* STUnifiedErrorCatcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STUnifiedErrorCatcher.h; sourceTree = "<group>"; };
+		7E553C75251326F0008E4D89 /* STUnifiedErrorCatcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STUnifiedErrorCatcher.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,9 +128,9 @@
 		7365080F24628EDD00EF4549 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				7E553C74251326F0008E4D89 /* STUnifiedErrorCatcher.h */,
+				7E553C75251326F0008E4D89 /* STUnifiedErrorCatcher.m */,
 				73195870250205B50026B052 /* Atomic.swift */,
-				73603A6B2508E67E00D9368F /* UnifiedErrorCatcher.h */,
-				73603A6C2508E67E00D9368F /* UnifiedErrorCatcher.m */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -206,13 +206,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				7365082D24628EDE00EF4549 /* SilverTray.h in Headers */,
-				73603A6E2508E67E00D9368F /* UnifiedErrorCatcher.h in Headers */,
 				7365083924628EDE00EF4549 /* opus_defines.h in Headers */,
 				7365083824628EDE00EF4549 /* opus_types.h in Headers */,
 				7365083624628EDE00EF4549 /* opus_multistream.h in Headers */,
 				7365083A24628EDE00EF4549 /* opus_projection.h in Headers */,
 				7365083724628EDE00EF4549 /* opus_custom.h in Headers */,
 				7365083524628EDE00EF4549 /* opus.h in Headers */,
+				7E553C76251326F0008E4D89 /* STUnifiedErrorCatcher.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -293,11 +293,11 @@
 				73195871250205B50026B052 /* Atomic.swift in Sources */,
 				7365083224628EDE00EF4549 /* Collection+Convenience.swift in Sources */,
 				7319586E250205AB0026B052 /* AudioEngineObservable.swift in Sources */,
-				73603A6F2508E67E00D9368F /* UnifiedErrorCatcher.m in Sources */,
 				7365083324628EDE00EF4549 /* AudioDecodable.swift in Sources */,
 				7365082B24628EDE00EF4549 /* DataStreamPlayer.swift in Sources */,
 				7365082F24628EDE00EF4549 /* DataStreamPlayerError.swift in Sources */,
 				7365082A24628EDE00EF4549 /* DataStreamPlayerState.swift in Sources */,
+				7E553C77251326F0008E4D89 /* STUnifiedErrorCatcher.m in Sources */,
 				7365083424628EDE00EF4549 /* OpusDecoder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -450,7 +450,7 @@
 					"$(PROJECT_DIR)/SilverTray/Libraries/Opus/Binary/iOS",
 				);
 				MARKETING_VERSION = 1.1.1;
-				MODULEMAP_FILE = "$(SRCROOT)/SilverTray/SilverTray.modulemap";
+				MODULEMAP_FILE = "";
 				OTHER_LDFLAGS = (
 					"-Xlinker",
 					"-w",
@@ -490,7 +490,7 @@
 					"$(PROJECT_DIR)/SilverTray/Libraries/Opus/Binary/iOS",
 				);
 				MARKETING_VERSION = 1.1.1;
-				MODULEMAP_FILE = "$(SRCROOT)/SilverTray/SilverTray.modulemap";
+				MODULEMAP_FILE = "";
 				OTHER_LDFLAGS = (
 					"-Xlinker",
 					"-w",
