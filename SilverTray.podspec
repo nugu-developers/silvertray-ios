@@ -12,10 +12,15 @@ play encoded data using AVAudioEngine
   s.source = { :git => 'https://github.com/nugu-developers/silvertray-ios.git', :tag => s.version.to_s }
   s.documentation_url = 'https://developers.nugu.co.kr'
 
+  # Nugu does not yet support Apple Silicon
+  s.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=*simulator*]' => 'arm64' }
+  s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=*simulator*]' => 'arm64' }
+
   s.ios.deployment_target = '10.0'
   s.tvos.deployment_target = '13.0'
-  s.watchos.deployment_target = '6.0'
-  s.macos.deployment_target = '10.15.0'
+  # FIXME: OpusDecoder.o does not valid.
+  # s.watchos.deployment_target = '6.0'
+  # s.macos.deployment_target = '10.15.0'
 
   s.swift_version = '5.1'
 
