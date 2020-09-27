@@ -134,17 +134,14 @@ private extension AudioEngineManager {
     func engineConfigurationChange(notification: Notification) {
         os_log("engineConfigurationChange: %{private}@", log: .audioEngine, type: .debug, "\(notification)")
         
-        if audioEngine.atomicValue.isRunning == false && 0 < audioEngineObservers.atomicValue.count {
-            do {
-                try startAudioEngine()
-            } catch {
-                os_log("audioEngine start failed", log: .audioEngine, type: .debug)
-                return
-            }
-            
-            audioEngineObservers.atomicValue.forEach { (observer) in
-                observer.engineConfigurationChange(notification: notification)
-            }
+        do {
+            try startAudioEngine()
+        } catch {
+            os_log("audioEngine start failed", log: .audioEngine, type: .debug)
+        }
+        
+        audioEngineObservers.atomicValue.forEach { (observer) in
+            observer.engineConfigurationChange(notification: notification)
         }
     }
 }

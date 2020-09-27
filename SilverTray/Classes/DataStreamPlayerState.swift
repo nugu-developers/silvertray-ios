@@ -31,7 +31,8 @@ public enum DataStreamPlayerState: Equatable {
     
     public static func == (lhs: DataStreamPlayerState, rhs: DataStreamPlayerState) -> Bool {
         switch (lhs, rhs) {
-        case (.start, .start),
+        case (.idle, .idle),
+             (.start, .start),
              (.finish, .finish),
              (.pause, .pause),
              (.resume, .resume),

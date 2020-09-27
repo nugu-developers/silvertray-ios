@@ -526,7 +526,7 @@ private extension DataStreamPlayer {
                 
                 // Though player was already stopped. But closure is called
                 // This situation will be occured often. Because retrieving audio data from DSP is very hard
-                guard [.start, .pause, .resume].contains(self.state) else { return }
+                guard [.finish, .stop].contains(self.state) == false else { return }
                 
                 // If player consumed last buffer
                 guard audioBuffer != self.lastBuffer else {
