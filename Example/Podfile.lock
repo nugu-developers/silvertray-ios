@@ -1,6 +1,6 @@
 PODS:
   - RxSwift (5.1.1)
-  - SilverTray (1.2.1)
+  - SilverTray (1.2.2)
 
 DEPENDENCIES:
   - RxSwift
@@ -16,8 +16,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   RxSwift: 81470a2074fa8780320ea5fe4102807cb7118178
-  SilverTray: 7f57c2deb8368c65e3a6c3336aa8700ac9d24c4e
+  SilverTray: 82d0372ce6038a255c8233c913476217d527c2d5
 
 PODFILE CHECKSUM: 6b2f3f2fe0bd9f6fc7ddfba1dcd5928fd7caa4fd
 
-COCOAPODS: 1.9.3
+COCOAPODS: 1.8.4
