@@ -303,10 +303,22 @@ public class DataStreamPlayer {
         }
         
         // Detach nodes
-        disconnectAudioChain()
-        detachAudioNodes()
+        if let error = (STUnifiedErrorCatcher.try {
+            disconnectAudioChain()
+            detachAudioNodes()
+            return nil
+        }) {
+            os_log("[%@] detaching nodes failed: %@", log: .player, type: .error, "\(id)", "\(error)")
+        }
         
-        player.stop()
+        // Stop player node
+        if let error = (STUnifiedErrorCatcher.try {
+            player.stop()
+            return nil
+        }) {
+            os_log("[%@] stopping player node failed: %@", log: .player, type: .error, "\(id)", "\(error)")
+        }
+        
         lastBuffer = nil
         scheduleBufferIndex = 0
         tempAudioArray.removeAll()
