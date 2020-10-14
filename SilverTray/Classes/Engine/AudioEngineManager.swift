@@ -111,10 +111,13 @@ extension AudioEngineManager {
 
 extension AudioEngineManager {
     @discardableResult func registerObserver(_ observer: Observer) -> Bool {
-        let result = audioEngineObservers.atomicValue.insert(observer)
+        var isInserted = false
+        audioEngineObservers.atomicMutate {
+            isInserted = $0.insert(observer).inserted
+        }
         try? startAudioEngine()
         
-        return result.inserted
+        return isInserted
     }
     
     @discardableResult func removeObserver(_ observer: Observer) -> Observer? {
@@ -140,8 +143,10 @@ private extension AudioEngineManager {
             os_log("audioEngine start failed", log: .audioEngine, type: .debug)
         }
         
-        audioEngineObservers.atomicValue.forEach { (observer) in
-            observer.engineConfigurationChange(notification: notification)
+        audioEngineObservers.atomicMutate {
+            $0.forEach { (observer) in
+                observer.engineConfigurationChange(notification: notification)
+            }
         }
     }
 }
