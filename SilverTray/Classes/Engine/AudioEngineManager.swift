@@ -143,10 +143,8 @@ private extension AudioEngineManager {
             os_log("audioEngine start failed", log: .audioEngine, type: .debug)
         }
         
-        audioEngineObservers.atomicMutate {
-            $0.forEach { (observer) in
-                observer.engineConfigurationChange(notification: notification)
-            }
+        audioEngineObservers.atomicValue.forEach { (observer) in
+            observer.engineConfigurationChange(notification: notification)
         }
     }
 }
