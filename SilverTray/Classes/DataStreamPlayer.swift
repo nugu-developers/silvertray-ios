@@ -550,7 +550,7 @@ private extension DataStreamPlayer {
                     guard self.lastBuffer == nil else { return }
                     os_log("[%@] waiting for next audio data.", log: .player, type: .debug, "\(self.id)")
                     
-                    self.notificationCenter.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
+                    self.audioBufferObserver = self.notificationCenter.addObserver(forName: .audioBufferChange, object: self, queue: nil) { [weak self] (notification) in
                         guard let self = self else { return }
                         guard let nextBuffer = self.audioBuffers[safe: self.scheduleBufferIndex] else { return }
                         
