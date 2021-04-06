@@ -520,6 +520,7 @@ private extension DataStreamPlayer {
         let bufferHandler: AVAudioNodeCompletionHandler = { [weak self] in
             self?.audioQueue.async { [weak self] in
                 guard let self = self else { return }
+                self.delegate?.dataStreamPlayerDidPlay(audioBuffer)
                 
                 // Though engine is not running, But this clousure can be called,
                 // Scheduled buffer might not be played. but just be flushed in this situation.
