@@ -19,7 +19,13 @@
 //
 
 import Foundation
+import AVFoundation
 
 public protocol DataStreamPlayerDelegate: class {
     func dataStreamPlayerStateDidChange(_ state: DataStreamPlayerState)
+    func dataStreamPlayerDidPlay(_ chunk: AVAudioPCMBuffer)
+}
+
+public extension DataStreamPlayerDelegate {
+    func dataStreamPlayerDidPlay(_ chunk: AVAudioPCMBuffer) {}
 }
