@@ -19,7 +19,7 @@
 
 import Foundation
 
-protocol AudioEngineObservable: class, Hashable {
+protocol AudioEngineObservable: AnyObject, Hashable {
     var id: UInt { get }
     func engineConfigurationChange(notification: Notification)
 }

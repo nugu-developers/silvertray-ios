@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'SilverTray'
-  s.version = '1.2.7'
+  s.version = '1.3.0'
   s.license = 'Apache License, Version 2.0'
   s.summary = 'Data chunk player'
   s.description = <<-DESC
@@ -16,13 +16,11 @@ play encoded data using AVAudioEngine
   s.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=*simulator*]' => 'arm64' }
   s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=*simulator*]' => 'arm64' }
 
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '12.0'
   s.tvos.deployment_target = '13.0'
   # FIXME: OpusDecoder.o does not valid.
   # s.watchos.deployment_target = '6.0'
   # s.macos.deployment_target = '10.15.0'
-
-  s.swift_version = '5.1'
 
   s.source_files = 'SilverTray/Classes/**/*', 'SilverTray/Libraries/**/*.h'
   s.public_header_files = 'SilverTray/Classes/**/*.h', 'SilverTray/Libraries/**/*.h'

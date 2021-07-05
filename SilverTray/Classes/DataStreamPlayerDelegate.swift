@@ -21,7 +21,7 @@
 import Foundation
 import AVFoundation
 
-public protocol DataStreamPlayerDelegate: class {
+public protocol DataStreamPlayerDelegate: AnyObject {
     func dataStreamPlayerStateDidChange(_ state: DataStreamPlayerState)
     func dataStreamPlayerDidPlay(_ chunk: AVAudioPCMBuffer)
 }
