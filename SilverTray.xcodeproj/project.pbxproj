@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -25,8 +25,8 @@
 		7365083824628EDE00EF4549 /* opus_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081D24628EDD00EF4549 /* opus_types.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7365083924628EDE00EF4549 /* opus_defines.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081E24628EDD00EF4549 /* opus_defines.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7365083A24628EDE00EF4549 /* opus_projection.h in Headers */ = {isa = PBXBuildFile; fileRef = 7365081F24628EDD00EF4549 /* opus_projection.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		7365083D24628EDE00EF4549 /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7365082624628EDD00EF4549 /* libopus.a */; };
 		73650889246D4F3C00EF4549 /* SilverTray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73650888246D4F3C00EF4549 /* SilverTray.swift */; };
+		73C255DD2695A1920008FE7F /* OpusCodec.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73C255DC2695A1920008FE7F /* OpusCodec.xcframework */; };
 		7E553C76251326F0008E4D89 /* STUnifiedErrorCatcher.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E553C74251326F0008E4D89 /* STUnifiedErrorCatcher.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		7E553C77251326F0008E4D89 /* STUnifiedErrorCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E553C75251326F0008E4D89 /* STUnifiedErrorCatcher.m */; };
 /* End PBXBuildFile section */
@@ -52,9 +52,9 @@
 		7365081D24628EDD00EF4549 /* opus_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus_types.h; sourceTree = "<group>"; };
 		7365081E24628EDD00EF4549 /* opus_defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus_defines.h; sourceTree = "<group>"; };
 		7365081F24628EDD00EF4549 /* opus_projection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus_projection.h; sourceTree = "<group>"; };
-		7365082624628EDD00EF4549 /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopus.a; sourceTree = "<group>"; };
 		7365082924628EDD00EF4549 /* SilverTray.modulemap */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = "sourcecode.module-map"; path = SilverTray.modulemap; sourceTree = "<group>"; };
 		73650888246D4F3C00EF4549 /* SilverTray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SilverTray.swift; sourceTree = "<group>"; };
+		73C255DC2695A1920008FE7F /* OpusCodec.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = OpusCodec.xcframework; sourceTree = "<group>"; };
 		7E553C74251326F0008E4D89 /* STUnifiedErrorCatcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = STUnifiedErrorCatcher.h; sourceTree = "<group>"; };
 		7E553C75251326F0008E4D89 /* STUnifiedErrorCatcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = STUnifiedErrorCatcher.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -64,7 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7365083D24628EDE00EF4549 /* libopus.a in Frameworks */,
+				73C255DD2695A1920008FE7F /* OpusCodec.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -185,17 +185,9 @@
 		7365082024628EDD00EF4549 /* Binary */ = {
 			isa = PBXGroup;
 			children = (
-				7365082524628EDD00EF4549 /* iOS */,
+				73C255DC2695A1920008FE7F /* OpusCodec.xcframework */,
 			);
 			path = Binary;
-			sourceTree = "<group>";
-		};
-		7365082524628EDD00EF4549 /* iOS */ = {
-			isa = PBXGroup;
-			children = (
-				7365082624628EDD00EF4549 /* libopus.a */,
-			);
-			path = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -362,6 +354,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_INCLUDE_PATHS = "\"$(SRCROOT)/SilverTray/OpusCodec.xcframework/ios-arm64_arm64e_armv7_armv7s\" \"$(SRCROOT)/SilverTray/OpusCodec.xcframework/ios-arm64_i386_x86_64-simulator\"";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -418,6 +411,7 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_INCLUDE_PATHS = "\"$(SRCROOT)/SilverTray/OpusCodec.xcframework/ios-arm64_arm64e_armv7_armv7s\" \"$(SRCROOT)/SilverTray/OpusCodec.xcframework/ios-arm64_i386_x86_64-simulator\"";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -449,7 +443,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/SilverTray/Libraries/Opus/Binary/iOS",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.3.0;
 				MODULEMAP_FILE = "";
 				OTHER_LDFLAGS = (
 					"-Xlinker",
@@ -489,7 +483,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/SilverTray/Libraries/Opus/Binary/iOS",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 1.3.0;
 				MODULEMAP_FILE = "";
 				OTHER_LDFLAGS = (
 					"-Xlinker",
