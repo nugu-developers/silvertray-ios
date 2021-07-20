@@ -8,7 +8,7 @@ framework module SilverTray {
         link "SilverTray"
         export *
     }
-    
+
     explicit module LibOpus {
         header "opus.h"
         header "opus_defines.h"

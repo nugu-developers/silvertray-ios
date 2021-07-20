@@ -21,6 +21,8 @@
 import Foundation
 import os.log
 
+import SilverTray_Objc
+
 /**
  Swift wrapper using OPUS library
  - If target os is iOS11 or higher, OPUS libraries is not needed because AVAudioConverter can decode it.

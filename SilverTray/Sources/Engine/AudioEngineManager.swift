@@ -5,6 +5,8 @@ import Foundation
 import AVFoundation
 import os.log
 
+import SilverTray_Objc
+
 class AudioEngineManager<Observer: AudioEngineObservable> {
     private let audioEngine = Atomic(AVAudioEngine())
     private let audioEngineQueue = OperationQueue()

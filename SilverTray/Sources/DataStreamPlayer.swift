@@ -22,6 +22,8 @@ import Foundation
 import AVFoundation
 import os.log
 
+import SilverTray_Objc
+
 /**
  Player for data chunks
  */
